@@ -281,51 +281,53 @@ namespace ContextFreeSession
             var fs = FollowRecv(context);
 
 
-            
+
 
             if (bs is null) throw new Exception();
             if (fs is null) throw new Exception();
             // bs が 0 (＝ε) なら 再帰なし
-            if (!bs.Any()) return new Epsilon();
+            if (bs.IsEmpty) return new Epsilon();
             // bs が 1 以上 and recv なら
 
             // > fs が 0 失敗
-            if (!fs.Any()) throw new Exception();
+            if (fs.IsEmpty) throw new Exception();
             // > fs が end 失敗
             // > fs が 1 以上 で recv のみ
             // >> 互いに素?
-            if (!(bs.Except(fs).Count() == bs.Count()))
+            if (!bs.IsDisjoint(fs))
             {
                 throw new Exception();
             }
             // A -> alpha A'
             // A' -> beta A' | Eps
             var newSym = context + "_";
-            var br1 = (bs.ToArray(), s.E.Append(new Call(newSym, new Epsilon())));
-            var br2 = (fs.ToArray(), new Epsilon());
-            var newRule = new Branch("", new List<(string[], LocalTypeTerm)>() { br1, br2 });
+            var br1 = (bs.Labels.ToArray(), s.E.Append(new Call(newSym, new Epsilon())));
+            var br2 = (fs.Labels.ToArray(), new Epsilon());
+            var newRule = new Branch(bs.From, new List<(string[], LocalTypeTerm)>() { br1, br2 });
             Rules.Add(newSym, newRule);
             return new Call(newSym, new Epsilon());
         }
 
-        private IEnumerable<string?>? FirstRecv(LocalTypeTerm t)
+        private ReceiveCanditate? FirstRecv(LocalTypeTerm t)
         {
             switch (t)
             {
                 case Receive r:
-                    return new List<string>() { r.Label };
+                    return new ReceiveCanditate(r.From, false, new List<string>() { r.Label });
                 case Branch b:
-                    return b.Branches.SelectMany(x => x.Item1);
+                    return new ReceiveCanditate(b.From, false, b.Branches.SelectMany(x => x.Item1));
                 case Star:
+                    // Union()
                     throw new NotImplementedException();
                 case Merge m:
                     var vs = m.Branches.Select(FirstRecv);
-                    return vs.Any(x => x is null) ? null : vs.SelectMany(x => x);
+                    return vs.Any(x => x is null) ? null : ReceiveCanditate.Union(vs);
                 case Call c:
                     var cf = FirstRecv(Rules[c.Nonterminal]);
-                    return cf is null ? null : (cf.Any() ? cf : ClousureFirstRecv(c.Cont));
+                    return cf is null ? null : (!cf.Nullable ? cf : cf.Union(FirstRecv(c.Cont)));
+                    //return cf is null ? null : (cf.Any() ? cf : ClousureFirstRecv(c.Cont));
                 case Epsilon:
-                    return new List<string?>() { null };
+                    return ReceiveCanditate.Empty();
                 case End:
                     throw new Exception();
                 case Select:
@@ -337,19 +339,19 @@ namespace ContextFreeSession
 
         }
 
-        private IEnumerable<string>? FollowRecv(string nonterminal)
+        private ReceiveCanditate? FollowRecv(string nonterminal)
         {
-            var l = new List<string>();
+            var l = new List<ReceiveCanditate>();
             foreach (var r in Rules.ToArray())
             {
                 var f = FollowRecv2(nonterminal, r.Value, r.Key);
                 if (f is null) return null;
-                l.AddRange(f);
+                l.Add(f);
             }
-            return l.Distinct();
+            return ReceiveCanditate.Union(l);
         }
 
-        private IEnumerable<string>? FollowRecv2(string nonterminal, LocalTypeTerm t, string context)
+        private ReceiveCanditate? FollowRecv2(string nonterminal, LocalTypeTerm t, string context)
         {
             switch (t)
             {
@@ -358,13 +360,13 @@ namespace ContextFreeSession
                 case Branch b:
                     var y = b.Branches.Select(x => FollowRecv2(nonterminal, x.Item2, context));
                     if (y.Any(x => x is null)) return null;
-                    return y.SelectMany(x => x).Distinct();
+                    return ReceiveCanditate.Union(y);
                 case Star st:
                     return FollowRecv2(nonterminal, st.E, context);
                 case Merge m:
                     var ys = m.Branches.Select(x => FollowRecv2(nonterminal, x, context));
                     //var vs = m.Branches.Select(FirstRecv);
-                    return ys.Any(x => x is null) ? null : ys.SelectMany(x => x).Distinct();
+                    return ys.Any(x => x is null) ? null : ReceiveCanditate.Union(ys);
                 case Call c:
                     //var cf = FirstRecv(Rules[c.Nonterminal]);
                     if (c.Nonterminal == nonterminal)
@@ -372,7 +374,7 @@ namespace ContextFreeSession
                         // 右再帰を無視
                         if (nonterminal == context && c.Cont is Epsilon)
                         {
-                            return new List<string>() { };
+                            return ReceiveCanditate.Empty();
                         }
 
                         var res = FollowRecvSub(nonterminal, c.Cont, context);
@@ -381,12 +383,12 @@ namespace ContextFreeSession
 
                     return FollowRecv2(nonterminal, c.Cont, context);
                 case Epsilon:
-                    return new List<string>() { };
+                    return ReceiveCanditate.Empty();
                 case End:
-                    return new List<string>() { };
+                    return ReceiveCanditate.Empty();
                 case Select sl:
                     var re = sl.Branches.Select(x => FollowRecv2(nonterminal, x.Item3, context));
-                    return re.Any(x => x is null) ? null : re.SelectMany(r => r).Distinct();
+                    return re.Any(x => x is null) ? null : ReceiveCanditate.Union(re);
                 case Send s:
                     return FollowRecv2(nonterminal, s.Cont, context);
                 default:
@@ -394,20 +396,27 @@ namespace ContextFreeSession
             }
         }
 
-        private IEnumerable<string>? FollowRecvSub(string nonterminal, LocalTypeTerm t, string context)
+        private ReceiveCanditate? FollowRecvSub(string nonterminal, LocalTypeTerm t, string context)
         {
             var r = FirstRecv(t);
             if (r is null)
             {
                 return null;
             }
-            if (r.All(x => x is not null))
+            if (!r.Nullable)
             {
                 return r;
             }
             else
             {
-                return r.Where(x => x is not null).Union(FollowRecv(context));
+                var res = FollowRecv(context);
+                if (res is null)
+                {
+                    return null;
+                }
+                var a = r.Union(res);
+                if (a is null) return null;
+                return new ReceiveCanditate(a.From, false, a.Labels);
             }
         }
 
@@ -416,28 +425,28 @@ namespace ContextFreeSession
         // star 内部の first
         // epsilon = []
         // null = fail
-        private IEnumerable<string>? ClousureFirstRecv(LocalTypeTerm t)
+        private ReceiveCanditate? ClousureFirstRecv(LocalTypeTerm t)
         {
             switch (t)
             {
                 case Receive r:
-                    return new List<string>() { r.Label };
+                    return new ReceiveCanditate(r.From, false, r.Label);
                 case Branch b:
-                    return b.Branches.SelectMany(x => x.Item1);
+                    return new ReceiveCanditate(b.From, false, b.Branches.SelectMany(x => x.Item1));
                 case Star:
                     throw new NotImplementedException();
                 case Merge m:
                     var vs = m.Branches.Select(ClousureFirstRecv);
-                    return vs.Any(x => x is null) ? null : vs.SelectMany(x => x).Distinct();
+                    return vs.Any(x => x is null) ? null : ReceiveCanditate.Union(vs.Cast<ReceiveCanditate>());
                 case Call c:
                     // c ga eps
                     var cf = FirstRecv(Rules[c.Nonterminal]);
                     //var cf = ClousureFirstRecv(Rules[c.Nonterminal]);
                     if (cf is null) return null;
-                    if (cf.Any(x => x is null)) return cf.Where(x => x is not null).Union(ClousureFirstRecv(c.Cont)).Distinct();
-                    return cf.Distinct();
+                    if (cf.Nullable) return cf.Union(ClousureFirstRecv(c.Cont));
+                    return cf;
                 case Epsilon:
-                    return Enumerable.Empty<string>();
+                    return ReceiveCanditate.Empty();
                 case End:
                     throw new Exception();
                 case Select:
@@ -446,36 +455,126 @@ namespace ContextFreeSession
                     return null;
             }
         }
+    }
 
-        /*
-        // 受信のリスト、または空
-        public List<(string role, string label)>? AllReceivePosibilities(SortedDictionary<string, LocalTypeTerm> rs, string current, LocalTypeTerm c)
+    /*
+    internal class ReceiveCanditate
+    {
+        public string? From { get; init; }
+
+        public IEnumerable<string> Labels { get; init; }
+
+        public ReceiveCanditate(string? from, IEnumerable<string> labels)
         {
-            switch (c)
+            From = from;
+            Labels = labels.ToHashSet();
+        }
+
+        public ReceiveCanditate(string? from, params string[] labels)
+        {
+            From = from;
+            Labels = labels.ToHashSet();
+        }
+
+        public ReceiveCanditate? Union(ReceiveCanditate canditate)
+        {
+            if (canditate.From == null)
             {
-                case Receive r:
-                    return new List<(string, string)> { (r.From, r.Label) };
-                case Branch b:
-                    return b.Branches.Select(t => (b.From, t.Item1)).ToList();
-                case Merge m:
-                    return m.Branches.SelectMany(x => AllReceivePosibilities(rs, current, x)).ToList();
-                case Star e:
-                    var a = AllReceivePosibilities(rs, current, e.E) is not null?.ToList();
-                    var h = AllReceivePosibilities(rs, current, e.Cont).ToList();
-                    return a.Union(h);
-                case Call ca:
-                    var all = AllReceivePosibilities(rs, ca.Nonterminal, rs[ca.Nonterminal]);
-                    return all.Any() ? all : AllReceivePosibilities(rs, current, ca.Cont);
-                case Epsilon eps:
-                    return AllReceivePosibilities();
-                case End:
-                case Send s:
-                case Select t:
-                default:
-                    throw new Exception();
+                return new ReceiveCanditate(From, Labels.Union(canditate.Labels));
+            }
+            else if (From == null || From == canditate.From)
+            {
+                return new ReceiveCanditate(canditate.From, Labels.Union(canditate.Labels));
+            }
+            else
+            {
+                return null;
             }
         }
-        */
 
+        public static ReceiveCanditate Empty()
+        {
+            return new ReceiveCanditate(null, Enumerable.Empty<string>());
+        }
+
+        public static ReceiveCanditate? Union(IEnumerable<ReceiveCanditate> canditates)
+        {
+            ReceiveCanditate? accum = Empty();
+            foreach (var c in canditates)
+            {
+                if (accum is null) return null;
+                accum = accum.Union(c);
+            }
+            return accum;
+        }
     }
+    */
+
+    internal class ReceiveCanditate
+    {
+        public string? From { get; init; }
+
+        public bool Nullable { get; init; }
+
+        public IEnumerable<string> Labels { get; init; }
+
+        public ReceiveCanditate(string? from, bool nullable, IEnumerable<string> labels)
+        {
+            From = from;
+            Nullable = nullable;
+            Labels = labels.ToHashSet();
+        }
+
+        public ReceiveCanditate(string? from, bool nullable, params string[] labels)
+        {
+            From = from;
+            Nullable = nullable;
+            Labels = labels.ToHashSet();
+        }
+
+        public bool IsEmpty
+        {
+            get { 
+            return From == null; }
+        }
+
+        public bool IsDisjoint(ReceiveCanditate c)
+        {
+            return c.Labels.Except(Labels).Count() == c.Labels.Count();
+        }
+
+        public ReceiveCanditate? Union(ReceiveCanditate canditate)
+        {
+            if (canditate.From == null)
+            {
+                return new ReceiveCanditate(From, Nullable || canditate.Nullable, Labels.Union(canditate.Labels));
+            }
+            else if (From == null || From == canditate.From)
+            {
+                return new ReceiveCanditate(canditate.From, Nullable || canditate.Nullable, Labels.Union(canditate.Labels));
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public static ReceiveCanditate Empty()
+        {
+            return new ReceiveCanditate(null, true, Enumerable.Empty<string>());
+        }
+
+        public static ReceiveCanditate? Union(IEnumerable<ReceiveCanditate> canditates)
+        {
+            ReceiveCanditate? accum = Empty();
+            foreach (var c in canditates)
+            {
+                if (accum is null) return null;
+                accum = accum.Union(c);
+            }
+            return accum;
+        }
+    }
+
+
 }
