@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace ContextFreeSession
 {
-    public partial class GlobalType : IEnumerable<(string, GlobalTypeElement[])>
+    public partial class GlobalType : IEnumerable<(string, GlobalTypeElement[])>, IEnumerable
     {
         private readonly SortedDictionary<string, List<GlobalTypeElement>> rules = new();
 
@@ -60,6 +60,37 @@ namespace ContextFreeSession
                 accumlator += "}".WithNewLine();
             }
             return accumlator.TrimNewLines();
+        }
+
+        public IEnumerable<string> Roles
+        {
+            get
+            {
+                var res = new List<string>();
+                foreach (var r in rules)
+                {
+                    res.AddRange(r.Value.Where(x => x is Transfer).Cast<Transfer>().SelectMany(x => new string[] { x.From, x.To }));
+
+                    res.AddRange(r.Value.Where(x => x is Choice).Cast<Choice>().SelectMany(x => new string[] { x.From, x.To }));
+                }
+                return res.Distinct();
+            }
+        }
+
+
+        public IEnumerable<string> Labels
+        {
+            get
+            {
+                var res = new List<string>();
+                foreach (var r in rules)
+                {
+                    res.AddRange(r.Value.Where(x => x is Transfer).Cast<Transfer>().Select(x => x.Label));
+
+                    res.AddRange(r.Value.Where(x => x is Choice).Cast<Choice>().SelectMany(x => x.Select(y => y.Item1)));
+                }
+                return res.Distinct();
+            }
         }
     }
 
@@ -225,4 +256,8 @@ namespace ContextFreeSession
 
         public static Recursion Do(string nonterminal) => new(nonterminal);
     }
+
+    //public static Transfer Send(string from, string to, string label) => new(from, to, label, typeof(Unit));
+
+    //public static Transfer Send<T>(string from, string to, string label) => new(from, to, label, typeof(T));
 }

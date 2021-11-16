@@ -117,7 +117,9 @@ namespace ContextFreeSession
     {
         internal LocalTypeElement() { }
 
-        //public abstract string ToTypeString();
+        public abstract string ToTypeString();
+
+        public virtual string ToExp() { return null; }
     }
 
     public sealed class Send : LocalTypeElement
@@ -146,6 +148,16 @@ namespace ContextFreeSession
         public override LocalTypeTerm Append(LocalTypeTerm local)
         {
             return new Send(To, Label, PayloadType, Cont.Append(local));
+        }
+
+        public override string ToTypeString()
+        {
+            return $"Send<{To}, {Label}, {PayloadType.FullName}, {((LocalTypeElement)Cont).ToTypeString()}>";
+        }
+
+        public override string ToExp()
+        {
+            return $"new Send<{PayloadType}>({To}, {Label}, {((LocalTypeElement)Cont).ToExp()})";
         }
     }
 
@@ -178,6 +190,12 @@ namespace ContextFreeSession
         {
             return new Select(To, Branches.Select(b => (b.Item1, b.Item2, b.Item3.Append(local))));
         }
+
+        public override string ToTypeString()
+        {
+            string s = string.Join(" ,", Branches.SelectMany(x => new List<string>() { x.Item1, x.Item2.FullName, ((LocalTypeElement)x.Item3).ToTypeString() }));
+            return $"Send<{To}, {s}>";
+        }
     }
 
     public sealed class Receive : LocalTypeElement
@@ -206,6 +224,11 @@ namespace ContextFreeSession
         public override LocalTypeTerm Append(LocalTypeTerm local)
         {
             return new Receive(From, Label, PayloadType, Cont.Append(local));
+        }
+
+        public override string ToTypeString()
+        {
+            return $"Receive<{From}, {Label}, {PayloadType.FullName}, {((LocalTypeElement)Cont).ToTypeString()}>";
         }
     }
 
@@ -247,6 +270,12 @@ namespace ContextFreeSession
         {
             return new Branch(From, Branches.Select(b => (b.Item1, b.Item2.Append(local))));
         }
+
+        public override string ToTypeString()
+        {
+            string s = string.Join(" ,", Branches.SelectMany(x => new List<string>() { "Labels<" + string.Join(" ,", x.Item1) + ">", ((LocalTypeElement)x.Item2).ToTypeString() }));
+            return $"Branch<{From}, {s}>";
+        }
     }
 
     public class Call : LocalTypeElement
@@ -271,10 +300,16 @@ namespace ContextFreeSession
             return new Call(Nonterminal, Cont.Append(local));
         }
 
-        /*
+
         public override string ToTypeString()
         {
-            return typeof(new Call<S, S1>());
+            return $"Call<{Nonterminal}, {((LocalTypeElement)Cont).ToTypeString()}>";
+        }
+
+        /*
+        public string ToExp()
+        {
+            return $"new Call(\"{Nonterminal}\", {Cont.ToExp()})";
         }
         */
     }
@@ -292,6 +327,11 @@ namespace ContextFreeSession
         {
             return "END";
         }
+
+        public override string ToTypeString()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class Epsilon : LocalTypeElement
@@ -306,6 +346,11 @@ namespace ContextFreeSession
         public override string ToString()
         {
             return "";
+        }
+
+        public override string ToTypeString()
+        {
+            return "Eps";
         }
     }
 }

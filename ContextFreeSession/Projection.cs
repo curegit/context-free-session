@@ -37,7 +37,8 @@ namespace ContextFreeSession
             var dic = new SortedDictionary<string, LocalTypeTerm>();
             foreach (var t in globalType)
             {
-                dic.Add(t.Item1, LocalMap(role, t.Item2));
+                var newnont = role + t.Item1;
+                dic.Add(newnont, LocalMap(role, t.Item2));
             }
             return dic;
         }
@@ -78,7 +79,7 @@ namespace ContextFreeSession
                         }
                     case Recursion t:
                         var tail2 = LocalMap(role, elements.Skip(1));
-                        return new Call(t.Nonterminal, tail2);
+                        return new Call(role + t.Nonterminal, tail2);
                     default:
                         throw new Exception();
                 }
@@ -172,10 +173,21 @@ namespace ContextFreeSession
 
         }
 
-        public void MergeStep()
+        /*
+        public void MergeStep(Merge m, string context)
         {
-
+            // same type all
+            if (m.BranchesFlat)
+            {
+                return;
+            }
+            else
+            {
+                var c = DirectedRecv(m.BranchesFlat, context);
+                
+            }
         }
+        */
 
         public (string, LocalTypeTerm t)? Find(Func<LocalTypeTerm, bool> f)
         {
