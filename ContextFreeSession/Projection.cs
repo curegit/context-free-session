@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ContextFreeSession
 {
-    public partial class GlobalType : IEnumerable<(string, GlobalTypeElement[])>
+    public partial class GlobalType
     {
         public void Validate(string role)
         {
@@ -71,6 +71,7 @@ namespace ContextFreeSession
                         }
                         else if (role == t.To)
                         {
+                            //return new RCBranch(t.From, t.Select(x => (x.Item1, x.Item2, LocalMap(role, x.Item3.Concat(elements.Skip(1))))));
                             return new Branch(t.From, t.Select(c => (c.Item1, new Receive(t.From, c.Item1, c.Item2, LocalMap(role, c.Item3.Concat(elements.Skip(1)))) as LocalTypeTerm)));
                         }
                         else
@@ -100,6 +101,7 @@ namespace ContextFreeSession
         public void Determinize()
         {
             SolveStar();
+            SolveMerge();
         }
 
         // no loop, no epsilon
@@ -168,26 +170,8 @@ namespace ContextFreeSession
             }
         }
 
-        public void Merge1()
-        {
 
-        }
 
-        /*
-        public void MergeStep(Merge m, string context)
-        {
-            // same type all
-            if (m.BranchesFlat)
-            {
-                return;
-            }
-            else
-            {
-                var c = DirectedRecv(m.BranchesFlat, context);
-                
-            }
-        }
-        */
 
         public (string, LocalTypeTerm t)? Find(Func<LocalTypeTerm, bool> f)
         {
@@ -245,41 +229,255 @@ namespace ContextFreeSession
             }
         }
 
+        public void SolveMerge()
+        {
+            var changed = false;
+
+
+            foreach (var rule in Rules.ToArray())
+            {
+
+
+                Rules[rule.Key] = SolveMergeSub(rule.Value, rule.Key);
+
+                if (changed)
+                {
+                    SolveMerge();
+                    return;
+                }
+            }
+
+
+            LocalTypeTerm SolveMergeSub(LocalTypeTerm t, string context)
+            {
+                if (changed)
+                {
+                    return t;
+                }
+                switch (t)
+                {
+                    case Send s:
+                        return new Send(s.To, s.Label, s.PayloadType, SolveMergeSub(s.Cont, context));
+                    case Select sl:
+
+                        var brs = sl.Branches.Select(x => (x.Item1, x.Item2, SolveMergeSub(x.Item3, context)));
+                        return new Select(sl.To, brs);
+                    case Receive r:
+                        return new Receive(r.From, r.Label, r.PayloadType, SolveMergeSub(r.Cont, context));
+                    //return SolveStarSub(r.Cont, context);
+                    case Branch b:
+                        var br = b.Branches.Select(x => (x.Item1, SolveMergeSub(x.Item2, context)));
+                        return new Branch(b.From, br);
+                    case Merge m:
+                        var bss = m.Branches.Select(x => SolveMergeSub(x, context));
+                        if (changed) return new Merge(bss);
+                        changed = true;
+                        return MergeStep(m, context);
+                    //return new Merge(m.Branches.Select(x => SolveStarSub(x, context)));
+                    case Star sc:
+                        throw new NotImplementedException();
+                    case Call c:
+                        return new Call(c.Nonterminal, SolveMergeSub(c.Cont, context));
+                    default:
+                        return t;
+                }
+
+            }
+
+            LocalTypeTerm MergeStep(Merge m, string context)
+            {
+
+
+
+                // 右側からmergeするので Merge はでてこない
+
+                var brs = m.BranchesFlat.Cast<LocalTypeElement>();
+
+                var t1 = brs.ElementAt(0);
+
+                foreach (var b in brs.Skip(1))
+                {
+                    var t = Merge(t1, b);
+                    if (t == null)
+                    {
+                        t1 = null;
+                        break;
+                    }
+                    t1 = t;
+                }
+                if (t1 is not null)
+                {
+                    return t1;
+                }
+
+
+
+                //m.BranchesFlat.Select(x => (x, DirectorSet(x, context)));
+
+
+                // m.UnderlayRecvs();
+                //m.Others();
+                // others に送信がある -> fail
+
+                //var send = false;
+                var from = new HashSet<string>();
+                var recvs = new List<Receive>();
+                var calls = new List<(string, Call)>();
+                var callD = new Dictionary<string, string>();
+
+                var eps = new List<(string, Epsilon)>();
+                var epsD = new Dictionary<string, Epsilon>();
+
+
+                foreach (var ele in brs)
+                {
+                    collect(ele);
+                }
+
+                if (from.Count != 1) throw new Exception();
+
+
+                var labs = recvs.GroupBy(x => x.Label).Select(x => (x.Key, new Receive(x.First().From, x.First().Label, x.First().PayloadType, new Merge(x.Select(z => z.Cont)).Simplify()))).Cast<(string, LocalTypeTerm)>();
+
+                var fin = labs.ToList();
+                fin.AddRange(calls.Cast<(string, LocalTypeTerm)>());
+                fin.AddRange(eps.Cast<(string, LocalTypeTerm)>());
+
+                return new Branch(from.First(), fin);
+
+
+
+                void collect(LocalTypeElement t)
+                {
+                    switch (t)
+                    {
+                        case Branch branch:
+                            foreach (var (l, b) in branch.Branches)
+                            {
+                                //if (b is Branch bb) collect(bb);
+                                // !!!
+                                from.Add(branch.From);
+                                if (b is Call cc) { calls.AddRange(l.Select(x => (x, cc))); }
+                                if (b is Epsilon e) { eps.AddRange(l.Select(x => (x, e))); }
+                                if (b is LocalTypeElement ee) { collect(ee); }
+                                else throw new Exception();
+                            }
+                            break;
+                        case Receive receive:
+                            from.Add(receive.From);
+                            recvs.Add(receive);
+                            break;
+                        case Call call:
+                            var res = DirectorSet(call, context);
+                            if (res is null) throw new Exception();
+
+                            from.Add(res.From);
+                            /// !!!!
+                            calls.AddRange(res.Labels.Select(x => (x, call)));
+                            break;
+                        case Epsilon epsilon:
+                            var res2 = DirectorSet(epsilon, context);
+                            if (res2 is null) throw new Exception();
+
+                            from.Add(res2.From);
+                            eps.AddRange(res2.Labels.Select(x => (x, epsilon)));
+                            break;
+
+                        default:
+                            throw new Exception();
+                    }
+                }
+            }
+
+
+
+
+
+
+
+            LocalTypeElement? Merge(LocalTypeElement a, LocalTypeElement b)
+            {
+                return null;
+
+                if (a == b)
+                {
+                    return a;
+                }
+                switch (a, b)
+                {
+                    case (Send s1, Send s2) when s1 == s2:
+                        return new Send(s1.To, s1.Label, s1.PayloadType, new Merge(s1.Cont, s2.Cont));
+                    case (Select l1, Select l2) when l1 == l2:
+                        return new Select(l1.To, l1.Branches.Select(x => (x.Item1, x.Item2, (LocalTypeTerm)new Merge(x.Item3, l2.Branches.Where(y => y.Item1 == x.Item1).First().Item3))));
+                    case (Call c1, Call c2) when c1.Nonterminal == c2.Nonterminal:
+                        return new Call(c1.Nonterminal, new Merge(c1.Cont, c2.Cont));
+                    default:
+                        return null;
+                }
+            }
+        }
 
         public void SolveStar()
         {
-            foreach (var r in Rules.ToArray())
+            var changed = false;
+
+
+            foreach (var rule in Rules.ToArray())
             {
-                Rules[r.Key] = SolveStarSub(r.Value, r.Key);
+
+
+                Rules[rule.Key] = SolveStarSub(rule.Value, rule.Key);
+
+                if (changed)
+                {
+                    SolveStar();
+                    break;
+                }
             }
+
+
+
+
+            LocalTypeTerm SolveStarSub(LocalTypeTerm t, string context)
+            {
+                if (changed)
+                {
+                    return t;
+                }
+
+
+                switch (t)
+                {
+                    case Send s:
+                        return new Send(s.To, s.Label, s.PayloadType, SolveStarSub(s.Cont, context));
+                    case Select sl:
+
+                        var brs = sl.Branches.Select(x => (x.Item1, x.Item2, SolveStarSub(x.Item3, context)));
+                        return new Select(sl.To, brs);
+                    case Receive r:
+                        return new Receive(r.From, r.Label, r.PayloadType, SolveStarSub(r.Cont, context));
+                    //return SolveStarSub(r.Cont, context);
+                    case Branch b:
+                        var br = b.Branches.Select(x => (x.Item1, SolveStarSub(x.Item2, context)));
+                        return new Branch(b.From, br);
+                    case Merge m:
+                        return new Merge(m.Branches.Select(x => SolveStarSub(x, context)));
+                    case Star sc:
+
+                        changed = true;
+                        //StarStep(sc, context);
+                        return StarStep(sc, context);
+                    case Call c:
+                        return new Call(c.Nonterminal, SolveStarSub(c.Cont, context));
+                    default:
+                        return t;
+                }
+            }
+
+
         }
 
-        public LocalTypeTerm SolveStarSub(LocalTypeTerm t, string context)
-        {
-            switch (t)
-            {
-                case Send s:
-                    return new Send(s.To, s.Label, s.PayloadType, SolveStarSub(s.Cont, context));
-                case Select sl:
-                    var brs = sl.Branches.Select(x => (x.Item1, x.Item2, SolveStarSub(x.Item3, context)));
-                    return new Select(sl.To, brs);
-                case Receive r:
-                    return new Receive(r.From, r.Label, r.PayloadType, SolveStarSub(r.Cont, context));
-                //return SolveStarSub(r.Cont, context);
-                case Branch b:
-                    var br = b.Branches.Select(x => (x.Item1, SolveStarSub(x.Item2, context)));
-                    return new Branch(b.From, br);
-                case Merge m:
-                    return new Merge(m.Branches.Select(x => SolveStarSub(x, context)));
-                case Star sc:
-                    //StarStep(sc, context);
-                    return StarStep(sc, context);
-                case Call c:
-                    return new Call(c.Nonterminal, SolveStarSub(c.Cont, context));
-                default:
-                    return t;
-            }
-        }
+
 
 
 
@@ -306,7 +504,7 @@ namespace ContextFreeSession
             // > fs が end 失敗
             // > fs が 1 以上 で recv のみ
             // >> 互いに素?
-            if (!bs.IsDisjoint(fs))
+            if (!bs.Disjoint(fs))
             {
                 throw new Exception();
             }
@@ -319,6 +517,35 @@ namespace ContextFreeSession
             Rules.Add(newSym, newRule);
             return new Call(newSym, new Epsilon());
         }
+
+        private ReceiveCanditate? DirectorSet(LocalTypeTerm t, string context)
+        {
+            var f = FirstRecv(t);
+            if (f is null)
+            {
+                return null;
+            }
+            else
+            {
+                if (f.Nullable)
+                {
+                    var fl = FollowRecv(context);
+                    if (fl is null)
+                    {
+                        return null;
+                    }
+                    // ?
+                    if (fl.Nullable)
+                    {
+                        return null;
+                    }
+                    return f.Union(fl);
+                }
+                return f;
+            }
+        }
+
+
 
         private ReceiveCanditate? FirstRecv(LocalTypeTerm t)
         {
@@ -337,7 +564,7 @@ namespace ContextFreeSession
                 case Call c:
                     var cf = FirstRecv(Rules[c.Nonterminal]);
                     return cf is null ? null : (!cf.Nullable ? cf : cf.Union(FirstRecv(c.Cont)));
-                    //return cf is null ? null : (cf.Any() ? cf : ClousureFirstRecv(c.Cont));
+                //return cf is null ? null : (cf.Any() ? cf : ClousureFirstRecv(c.Cont));
                 case Epsilon:
                     return ReceiveCanditate.Empty();
                 case End:
@@ -546,11 +773,13 @@ namespace ContextFreeSession
 
         public bool IsEmpty
         {
-            get { 
-            return From == null; }
+            get
+            {
+                return From == null;
+            }
         }
 
-        public bool IsDisjoint(ReceiveCanditate c)
+        public bool Disjoint(ReceiveCanditate c)
         {
             return c.Labels.Except(Labels).Count() == c.Labels.Count();
         }

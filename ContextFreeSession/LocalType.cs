@@ -53,6 +53,11 @@ namespace ContextFreeSession
             //Branches = branches.SelectMany(b => b is Merge merge ? merge.Branches : new List<LocalTypeTerm>() { b }).ToList();
         }
 
+        internal Merge(params LocalTypeTerm[] localTypeTerms)
+        {
+            Branches = localTypeTerms.ToList();
+        }
+
         public List<LocalTypeTerm> BranchesFlat
         {
             get
