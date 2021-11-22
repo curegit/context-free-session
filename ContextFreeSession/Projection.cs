@@ -337,11 +337,13 @@ namespace ContextFreeSession
                 if (from.Count != 1) throw new Exception();
 
 
-                var labs = recvs.GroupBy(x => x.Label).Select(x => (x.Key, new Receive(x.First().From, x.First().Label, x.First().PayloadType, new Merge(x.Select(z => z.Cont)).Simplify()))).Cast<(string, LocalTypeTerm)>();
+                //var labs = recvs.GroupBy(x => x.Label).Select(x => (x.Key, new Receive(x.First().From, x.First().Label, x.First().PayloadType, new Merge(x.Select(z => z.Cont)).Simplify()))).Cast<(string, LocalTypeTerm)>();
+
+                var labs = recvs.GroupBy(x => x.Label).Select(x => (x.Key, new Receive(x.First().From, x.First().Label, x.First().PayloadType, new Merge(x.Select(z => z.Cont)).Simplify()))).Select(x => (x.Key, x.Item2 as LocalTypeTerm));
 
                 var fin = labs.ToList();
-                fin.AddRange(calls.Cast<(string, LocalTypeTerm)>());
-                fin.AddRange(eps.Cast<(string, LocalTypeTerm)>());
+                fin.AddRange(calls.Select(x => (x.Item1, (LocalTypeTerm)x.Item2)));
+                fin.AddRange(eps.Select(x => (x.Item1, (LocalTypeTerm)x.Item2)));
 
                 return new Branch(from.First(), fin);
 
@@ -622,7 +624,7 @@ namespace ContextFreeSession
 
                     return FollowRecv2(nonterminal, c.Cont, context);
                 case Epsilon:
-                    return ReceiveCanditate.Empty();
+                    return new ReceiveCanditate(null, false);
                 case End:
                     return ReceiveCanditate.Empty();
                 case Select sl:
@@ -807,7 +809,7 @@ namespace ContextFreeSession
 
         public static ReceiveCanditate? Union(IEnumerable<ReceiveCanditate> canditates)
         {
-            ReceiveCanditate? accum = Empty();
+            ReceiveCanditate? accum = new ReceiveCanditate(null, false);
             foreach (var c in canditates)
             {
                 if (accum is null) return null;
