@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ContextFreeSession
+namespace ContextFreeSession.Design
 {
     public partial class LocalType
     {

@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ContextFreeSession
+namespace ContextFreeSession.Design
 {
     public partial class GlobalType : IEnumerable<(string, GlobalTypeElement[])>
     {

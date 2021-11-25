@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-using ContextFreeSession;
+using ContextFreeSession.Design;
 
 namespace ConsoleTest
 {
