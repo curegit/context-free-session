@@ -5,9 +5,9 @@ using System.Linq;
 
 namespace ContextFreeSession
 {
-    public partial class GlobalType : IEnumerable<(string, GlobalTypeElement[])>, IEnumerable
+    public partial class GlobalType : IEnumerable<(string, GlobalTypeElement[])>
     {
-        private readonly SortedDictionary<string, List<GlobalTypeElement>> rules = new();
+        private readonly AssociationList<string, List<GlobalTypeElement>> rules = new();
 
         IEnumerator IEnumerable.GetEnumerator()
         {
@@ -16,9 +16,9 @@ namespace ContextFreeSession
 
         public IEnumerator<(string, GlobalTypeElement[])> GetEnumerator()
         {
-            foreach (var rule in rules)
+            foreach (var (x, y) in rules)
             {
-                yield return (rule.Key, rule.Value.ToArray());
+                yield return (x, y.ToArray());
             }
         }
 
@@ -50,10 +50,10 @@ namespace ContextFreeSession
         public override string ToString()
         {
             var accumlator = "";
-            foreach (var rule in rules)
+            foreach (var (key, value) in rules)
             {
-                accumlator += (rule.Key + " {").WithNewLine();
-                foreach (var element in rule.Value)
+                accumlator += (key + " {").WithNewLine();
+                foreach (var element in value)
                 {
                     accumlator += element.ToString().Indented(4).WithNewLine();
                 }
@@ -67,11 +67,11 @@ namespace ContextFreeSession
             get
             {
                 var res = new List<string>();
-                foreach (var r in rules)
+                foreach (var (key, value) in rules)
                 {
-                    res.AddRange(r.Value.Where(x => x is Transfer).Cast<Transfer>().SelectMany(x => new string[] { x.From, x.To }));
+                    res.AddRange(value.Where(x => x is Transfer).Cast<Transfer>().SelectMany(x => new string[] { x.From, x.To }));
 
-                    res.AddRange(r.Value.Where(x => x is Choice).Cast<Choice>().SelectMany(x => new string[] { x.From, x.To }));
+                    res.AddRange(value.Where(x => x is Choice).Cast<Choice>().SelectMany(x => new string[] { x.From, x.To }));
                 }
                 return res.Distinct();
             }
@@ -83,11 +83,11 @@ namespace ContextFreeSession
             get
             {
                 var res = new List<string>();
-                foreach (var r in rules)
+                foreach (var (key, value) in rules)
                 {
-                    res.AddRange(r.Value.Where(x => x is Transfer).Cast<Transfer>().Select(x => x.Label));
+                    res.AddRange(value.Where(x => x is Transfer).Cast<Transfer>().Select(x => x.Label));
 
-                    res.AddRange(r.Value.Where(x => x is Choice).Cast<Choice>().SelectMany(x => x.Select(y => y.Item1)));
+                    res.AddRange(value.Where(x => x is Choice).Cast<Choice>().SelectMany(x => x.Select(y => y.Item1)));
                 }
                 return res.Distinct();
             }
@@ -256,8 +256,4 @@ namespace ContextFreeSession
 
         public static Recursion Do(string nonterminal) => new(nonterminal);
     }
-
-    //public static Transfer Send(string from, string to, string label) => new(from, to, label, typeof(Unit));
-
-    //public static Transfer Send<T>(string from, string to, string label) => new(from, to, label, typeof(T));
 }

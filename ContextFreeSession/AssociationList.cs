@@ -30,6 +30,13 @@ namespace ContextFreeSession
             }
         }
 
+        public bool ContainsKey(TKey key)
+        {
+            return dictionary.ContainsKey(key);
+        }
+
+        public int Count => keys.Count;
+
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();

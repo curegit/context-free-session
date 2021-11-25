@@ -38,10 +38,10 @@ namespace ContextFreeSession
         public string Generate()
         {
             var res = "";
-            foreach (var r in Rules)
+            foreach (var (key, value) in Rules)
             {
-                var S = r.Key;
-                var t = (LocalTypeElement)r.Value;
+                var S = key;
+                var t = (LocalTypeElement)value;
                 var className = S;
                 //var s = $"public class {className} : {t.ToTypeString()} {{ public {className}() : base({t.ToExp()}) {{ }} }}";
                 var s = $"public class {className} : {t.ToTypeString()} {{ }}";

@@ -32,9 +32,9 @@ namespace ContextFreeSession
             return local;
         }
 
-        private static SortedDictionary<string, LocalTypeTerm> MapToLocalTerms(string role, GlobalType globalType)
+        private static AssociationList<string, LocalTypeTerm> MapToLocalTerms(string role, GlobalType globalType)
         {
-            var dic = new SortedDictionary<string, LocalTypeTerm>();
+            var dic = new AssociationList<string, LocalTypeTerm>();
             foreach (var t in globalType)
             {
                 var newnont = role + t.Item1;
@@ -114,10 +114,13 @@ namespace ContextFreeSession
                 // kansetsu
                 for (var j = 0; j < i; j++)
                 {
-                    var r = rs.ElementAt(i).Value;
-                    var rkey = rs.ElementAt(i).Key;
-                    var jsym = rs.ElementAt(j).Key;
-                    var jr = rs.ElementAt(j).Value;
+                    var (rkey, r) = rs.ElementAt(i);
+                    var (jsym, jr) = rs.ElementAt(j);
+
+                    //var r = rs.ElementAt(i).Value;
+                    //var rkey = rs.ElementAt(i).Key;
+                    //var jsym = rs.ElementAt(j).Key;
+                    //var jr = rs.ElementAt(j).Value;
                     if (r is Call c && c.Nonterminal == jsym)
                     {
                         rs[rkey] = jr.Append(c.Cont);
@@ -133,8 +136,9 @@ namespace ContextFreeSession
                     }
                 }
                 // direct
-                var s = rs.ElementAt(i).Key;
-                var e = rs.ElementAt(i).Value;
+                var (s, e) = rs.ElementAt(i);
+                //var s = rs.ElementAt(i).Key;
+               // var e = rs.ElementAt(i).Value;
                 if (e is Call && ((Call)e).Nonterminal == s)
                 {
                     // 
@@ -172,12 +176,12 @@ namespace ContextFreeSession
 
 
 
-
+        /*
         public (string, LocalTypeTerm t)? Find(Func<LocalTypeTerm, bool> f)
         {
-            foreach (var r in Rules)
+            foreach (var (nonterminal, value) in Rules)
             {
-                var res = Find2(f, r.Value, r.Key);
+                var res = Find2(f, value, nonterminal);
                 if (res is null) continue;
                 return res;
             }
@@ -228,17 +232,18 @@ namespace ContextFreeSession
                     return null;
             }
         }
+        */
 
         public void SolveMerge()
         {
             var changed = false;
 
 
-            foreach (var rule in Rules.ToArray())
+            foreach (var (key, value) in Rules.ToArray())
             {
 
 
-                Rules[rule.Key] = SolveMergeSub(rule.Value, rule.Key);
+                Rules[key] = SolveMergeSub(value, key);
 
                 if (changed)
                 {
@@ -424,11 +429,11 @@ namespace ContextFreeSession
             var changed = false;
 
 
-            foreach (var rule in Rules.ToArray())
+            foreach (var (key, value) in Rules.ToArray())
             {
 
 
-                Rules[rule.Key] = SolveStarSub(rule.Value, rule.Key);
+                Rules[key] = SolveStarSub(value, key);
 
                 if (changed)
                 {
@@ -583,9 +588,9 @@ namespace ContextFreeSession
         private ReceiveCanditate? FollowRecv(string nonterminal)
         {
             var l = new List<ReceiveCanditate>();
-            foreach (var r in Rules.ToArray())
+            foreach (var (key, value) in Rules.ToArray())
             {
-                var f = FollowRecv2(nonterminal, r.Value, r.Key);
+                var f = FollowRecv2(nonterminal, value, key);
                 if (f is null) return null;
                 l.Add(f);
             }

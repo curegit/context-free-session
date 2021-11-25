@@ -8,11 +8,11 @@ namespace ContextFreeSession
 {
     public partial class LocalType
     {
-        public string Role;
+        public readonly string Role;
 
-        public SortedDictionary<string, LocalTypeTerm> Rules;
+        private readonly AssociationList<string, LocalTypeTerm> Rules;
 
-        public LocalType(string role, SortedDictionary<string, LocalTypeTerm> rs)
+        internal LocalType(string role, AssociationList<string, LocalTypeTerm> rs)
         {
             Role = role;
             Rules = rs;
@@ -21,11 +21,11 @@ namespace ContextFreeSession
         public override string ToString()
         {
             var accumlator = "";
-            foreach (var rule in Rules)
+            foreach (var (nonterminal, value) in Rules)
             {
-                accumlator += (rule.Key + " {").WithNewLine();
+                accumlator += (nonterminal + " {").WithNewLine();
 
-                accumlator += rule.Value.ToString().Indented(4).WithNewLine();
+                accumlator += value.ToString().Indented(4).WithNewLine();
 
                 accumlator += "}".WithNewLine();
             }
