@@ -138,7 +138,7 @@ namespace ContextFreeSession
                 // direct
                 var (s, e) = rs.ElementAt(i);
                 //var s = rs.ElementAt(i).Key;
-               // var e = rs.ElementAt(i).Value;
+                // var e = rs.ElementAt(i).Value;
                 if (e is Call && ((Call)e).Nonterminal == s)
                 {
                     // 
@@ -762,20 +762,20 @@ namespace ContextFreeSession
 
         public bool Nullable { get; init; }
 
-        public IEnumerable<string> Labels { get; init; }
+        public OrderedSet<string> Labels { get; init; }
 
         public ReceiveCanditate(string? from, bool nullable, IEnumerable<string> labels)
         {
             From = from;
             Nullable = nullable;
-            Labels = labels.ToHashSet();
+            Labels = new OrderedSet<string>(labels);
         }
 
         public ReceiveCanditate(string? from, bool nullable, params string[] labels)
         {
             From = from;
             Nullable = nullable;
-            Labels = labels.ToHashSet();
+            Labels = new OrderedSet<string>(labels);
         }
 
         public bool IsEmpty
