@@ -109,9 +109,9 @@ namespace ContextFreeSession.Design
 
         public string Label { get; private set; }
 
-        public Type PayloadType { get; private set; }
+        public PayloadType PayloadType { get; private set; }
 
-        public Transfer(string from, string to, string label, Type payloadType)
+        public Transfer(string from, string to, string label, PayloadType payloadType)
         {
             From = from ?? throw new ArgumentNullException(nameof(from));
             To = to ?? throw new ArgumentNullException(nameof(to));
@@ -137,26 +137,26 @@ namespace ContextFreeSession.Design
 
         public override string ToString()
         {
-            if (PayloadType == typeof(Unit))
+            if (PayloadType.IsUnitType)
             {
                 return $"{From} → {To}: {Label};";
             }
             else
             {
-                return $"{From} → {To}: {Label}<{PayloadType.Name}>;";
+                return $"{From} → {To}: {Label}<{PayloadType}>;";
             }
         }
     }
 
-    public sealed class Choice : GlobalTypeElement, IEnumerable<(string, Type, GlobalTypeElement[])>
+    public sealed class Choice : GlobalTypeElement, IEnumerable<(string, PayloadType, GlobalTypeElement[])>
     {
         public string From { get; private set; }
 
         public string To { get; private set; }
 
-        private readonly List<(string label, Type payloadType, List<GlobalTypeElement> conts)> Cases;
+        private readonly List<(string label, PayloadType payloadType, List<GlobalTypeElement> conts)> Cases;
 
-        public Choice(string from, string to, params (string label, Type payloadType, GlobalTypeElement[] conts)[] cases)
+        public Choice(string from, string to, params (string label, PayloadType payloadType, GlobalTypeElement[] conts)[] cases)
         {
             From = from ?? throw new ArgumentNullException(nameof(from));
             To = to ?? throw new ArgumentNullException(nameof(to));
@@ -199,7 +199,7 @@ namespace ContextFreeSession.Design
             return GetEnumerator();
         }
 
-        public IEnumerator<(string, Type, GlobalTypeElement[])> GetEnumerator()
+        public IEnumerator<(string, PayloadType, GlobalTypeElement[])> GetEnumerator()
         {
             return Cases.Select(c => (c.label, c.payloadType, c.conts.ToArray())).GetEnumerator();
         }
@@ -209,13 +209,13 @@ namespace ContextFreeSession.Design
             var accumlator = $"{From} → {To}:";
             foreach (var (label, payloadType, conts) in Cases)
             {
-                if (payloadType == typeof(Unit))
+                if (payloadType.IsUnitType)
                 {
                     accumlator += $" {label} {{".WithNewLine();
                 }
                 else
                 {
-                    accumlator += $" {label}<{payloadType.Name}> {{".WithNewLine();
+                    accumlator += $" {label}<{payloadType}> {{".WithNewLine();
                 }
                 foreach (var element in conts)
                 {
@@ -244,15 +244,15 @@ namespace ContextFreeSession.Design
 
     public static class GlobalTypeCombinator
     {
-        public static Transfer Send(string from, string to, string label) => new(from, to, label, typeof(Unit));
+        public static Transfer Send(string from, string to, string label) => new(from, to, label, PayloadType.Create<Unit>());
 
-        public static Transfer Send<T>(string from, string to, string label) => new(from, to, label, typeof(T));
+        public static Transfer Send<T>(string from, string to, string label) => new(from, to, label, PayloadType.Create<T>());
 
-        public static Choice Send(string from, string to, params (string, Type, GlobalTypeElement[])[] cases) => new(from, to, cases);
+        public static Choice Send(string from, string to, params (string, PayloadType, GlobalTypeElement[])[] cases) => new(from, to, cases);
 
-        public static (string, Type, GlobalTypeElement[]) Case(string label, params GlobalTypeElement[] conts) => (label, typeof(Unit), conts);
+        public static (string, PayloadType, GlobalTypeElement[]) Case(string label, params GlobalTypeElement[] conts) => (label, PayloadType.Create<Unit>(), conts);
 
-        public static (string, Type, GlobalTypeElement[]) Case<T>(string label, params GlobalTypeElement[] conts) => (label, typeof(T), conts);
+        public static (string, PayloadType, GlobalTypeElement[]) Case<T>(string label, params GlobalTypeElement[] conts) => (label, PayloadType.Create<T>(), conts);
 
         public static Recursion Do(string nonterminal) => new(nonterminal);
     }

@@ -48,10 +48,14 @@ namespace ContextFreeSession.Design
             return new PayloadType(typeof(T));
         }
 
+        public bool IsUnitType => type == typeof(Unit);
+
         public override string ToString()
         {
             return ToString(ShortName);
         }
+
+        public string FullName => ToString(CertainName);
 
         private string ToString(Func<Type, string> func)
         {

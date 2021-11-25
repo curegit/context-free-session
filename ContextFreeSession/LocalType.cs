@@ -133,11 +133,11 @@ namespace ContextFreeSession.Design
 
         public string Label { get; private set; }
 
-        public Type PayloadType { get; private set; }
+        public PayloadType PayloadType { get; private set; }
 
         public LocalTypeTerm Cont { get; private set; }
 
-        internal Send(string to, string label, Type payloadType, LocalTypeTerm cont)
+        internal Send(string to, string label, PayloadType payloadType, LocalTypeTerm cont)
         {
             To = to;
             Label = label;
@@ -170,9 +170,9 @@ namespace ContextFreeSession.Design
     {
         public string To { get; private set; }
 
-        public List<(string, Type, LocalTypeTerm)> Branches { get; private set; }
+        public List<(string, PayloadType, LocalTypeTerm)> Branches { get; private set; }
 
-        internal Select(string to, IEnumerable<(string, Type payloadType, LocalTypeTerm)> branches)
+        internal Select(string to, IEnumerable<(string, PayloadType payloadType, LocalTypeTerm)> branches)
         {
             To = to;
             Branches = branches.ToList();
@@ -209,11 +209,11 @@ namespace ContextFreeSession.Design
 
         public string Label { get; private set; }
 
-        public Type PayloadType { get; private set; }
+        public PayloadType PayloadType { get; private set; }
 
         public LocalTypeTerm Cont { get; private set; }
 
-        internal Receive(string from, string label, Type payloadType, LocalTypeTerm cont)
+        internal Receive(string from, string label, PayloadType payloadType, LocalTypeTerm cont)
         {
             From = from;
             Label = label;
