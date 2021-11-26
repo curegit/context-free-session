@@ -118,13 +118,33 @@ namespace ContextFreeSession.Design
         }
     }
 
-    public abstract class LocalTypeElement : LocalTypeTerm
+    public abstract class LocalTypeElement : LocalTypeTerm, IEquatable<LocalTypeElement>
     {
         internal LocalTypeElement() { }
 
         public abstract string ToTypeString();
 
+        public abstract bool Equals(LocalTypeElement? other);
+
         public virtual string ToExp() { return null; }
+
+        public static bool operator ==(LocalTypeElement? left, LocalTypeElement? right)
+        {
+            if (left is null)
+            {
+                if (right is null)
+                {
+                    return true;
+                }
+
+                // Only the left side is null.
+                return false;
+            }
+            // Equals handles case of null on right side.
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(LocalTypeElement? lhs, LocalTypeElement? rhs) => !(lhs == rhs);
     }
 
     public sealed class Send : LocalTypeElement
@@ -164,6 +184,18 @@ namespace ContextFreeSession.Design
         {
             return $"new Send<{PayloadType}>({To}, {Label}, {((LocalTypeElement)Cont).ToExp()})";
         }
+
+        public override bool Equals(LocalTypeElement? other)
+        {
+            if (other is Send send)
+            {
+                return send.To == To && Label == send.Label && PayloadType == send.PayloadType && Cont == send.Cont;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 
     public sealed class Select : LocalTypeElement
@@ -201,6 +233,49 @@ namespace ContextFreeSession.Design
             string s = string.Join(" ,", Branches.SelectMany(x => new List<string>() { x.Item1, x.Item2.FullName, ((LocalTypeElement)x.Item3).ToTypeString() }));
             return $"Send<{To}, {s}>";
         }
+
+        public override bool Equals(LocalTypeElement? other)
+        {
+            if (other is Select select)
+            {
+                if (select.To == To)
+                {
+                    var set1 = new HashSet<(string, PayloadType, LocalTypeTerm)>(Branches);
+                    var set2 = new HashSet<(string, PayloadType, LocalTypeTerm)>(select.Branches);
+                    return set1.SetEquals(set2);
+                }
+            }
+            return false;
+        }
+
+        public bool Eq(Select other)
+        {
+            if (other.To == To)
+            {
+                var set1 = new HashSet<(string, PayloadType)>(Branches.Select(x => (x.Item1, x.Item2)));
+                var set2 = new HashSet<(string, PayloadType)>(other.Branches.Select(x => (x.Item1, x.Item2)));
+                return set1.SetEquals(set2);
+            }
+            return false;
+        }
+
+        public Select? MergeCont(Select other)
+        {
+            if (Eq(other))
+            {
+                var alist = new AssociationList<(string, PayloadType), LocalTypeTerm>();
+                foreach (var (l, t, c) in Branches)
+                {
+                    alist.Add((l, t), c);
+                }
+                foreach (var (l, t, c) in other.Branches)
+                {
+                    alist[(l, t)] = new Merge(alist[(l, t)], c);
+                }
+                return new Select(To, alist.Select(x => (x.Item1.Item1, x.Item1.Item2, x.Item2)));
+            }
+            return null;
+        }
     }
 
     public sealed class Receive : LocalTypeElement
@@ -234,6 +309,15 @@ namespace ContextFreeSession.Design
         public override string ToTypeString()
         {
             return $"Receive<{From}, {Label}, {PayloadType.FullName}, {((LocalTypeElement)Cont).ToTypeString()}>";
+        }
+
+        public override bool Equals(LocalTypeElement? other)
+        {
+            if (other is Receive r)
+            {
+                return From == r.From && Label == r.Label && PayloadType == r.PayloadType && Cont == r.Cont;
+            }
+            return false;
         }
     }
 
@@ -281,6 +365,16 @@ namespace ContextFreeSession.Design
             string s = string.Join(" ,", Branches.SelectMany(x => new List<string>() { "Labels<" + string.Join(" ,", x.Item1) + ">", ((LocalTypeElement)x.Item2).ToTypeString() }));
             return $"Branch<{From}, {s}>";
         }
+
+        public override bool Equals(LocalTypeElement? other)
+        {
+            if (other is Branch b)
+            {
+                // TODO
+                return From == b.From;
+            }
+            return false;
+        }
     }
 
     public class Call : LocalTypeElement
@@ -311,6 +405,15 @@ namespace ContextFreeSession.Design
             return $"Call<{Nonterminal}, {((LocalTypeElement)Cont).ToTypeString()}>";
         }
 
+        public override bool Equals(LocalTypeElement? other)
+        {
+            if (other is Call c)
+            {
+                return Nonterminal == c.Nonterminal && Cont == c.Cont;
+            }
+            return false;
+        }
+
         /*
         public string ToExp()
         {
@@ -324,6 +427,11 @@ namespace ContextFreeSession.Design
         internal End() { }
 
         public override LocalTypeTerm Append(LocalTypeTerm local)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool Equals(LocalTypeElement? other)
         {
             throw new NotImplementedException();
         }
@@ -346,6 +454,15 @@ namespace ContextFreeSession.Design
         public override LocalTypeTerm Append(LocalTypeTerm local)
         {
             return local;
+        }
+
+        public override bool Equals(LocalTypeElement? other)
+        {
+            if (other is Epsilon)
+            {
+                return true;
+            }
+            return false;
         }
 
         public override string ToString()
