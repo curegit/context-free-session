@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace ContextFreeSession.Design
 {
-    public class PayloadType
+    public class PayloadType : IEquatable<PayloadType>
     {
         private readonly Type type;
 
@@ -136,11 +136,45 @@ namespace ContextFreeSession.Design
         {
             return typeKeywords.GetValueOrDefault(type);
         }
+
+        public bool Equals(PayloadType? other)
+        {
+            if (other is PayloadType payloadType)
+            {
+                return FullName == payloadType.FullName;
+            }
+            return false;
+        }
+
+        public static bool operator ==(PayloadType? left, PayloadType? right)
+        {
+            if (left is null)
+            {
+                if (right is null)
+                {
+                    return true;
+                }
+                return false;
+            }
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(PayloadType? left, PayloadType? right) => !(left == right);
+
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as PayloadType);
+        }
+
+        public override int GetHashCode()
+        {
+            return ShortName(type).GetHashCode();
+        }
     }
 
     // null 許容注釈を表現するための型
-    public class Null<T> where T : class
+    public struct Null<T> where T : class
     {
-        private Null() { }
+
     }
 }
