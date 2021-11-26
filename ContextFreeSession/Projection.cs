@@ -404,7 +404,7 @@ namespace ContextFreeSession.Design
 
             LocalTypeElement? Merge(LocalTypeElement a, LocalTypeElement b)
             {
-                return null;
+                //return null;
 
                 if (a == b)
                 {
@@ -412,10 +412,11 @@ namespace ContextFreeSession.Design
                 }
                 switch (a, b)
                 {
-                    case (Send s1, Send s2) when s1 == s2:
+                    case (Send s1, Send s2) when s1.To == s2.To && s1.Label == s2.Label && s1.PayloadType == s2.PayloadType:
                         return new Send(s1.To, s1.Label, s1.PayloadType, new Merge(s1.Cont, s2.Cont));
-                    case (Select l1, Select l2) when l1 == l2:
-                        return new Select(l1.To, l1.Branches.Select(x => (x.Item1, x.Item2, (LocalTypeTerm)new Merge(x.Item3, l2.Branches.Where(y => y.Item1 == x.Item1).First().Item3))));
+                    case (Select l1, Select l2) when l1.MergeCont(l2) is Select res:
+                        return res;
+                        //return new Select(l1.To, l1.Branches.Select(x => (x.Item1, x.Item2, (LocalTypeTerm)new Merge(x.Item3, l2.Branches.Where(y => y.Item1 == x.Item1).First().Item3))));
                     case (Call c1, Call c2) when c1.Nonterminal == c2.Nonterminal:
                         return new Call(c1.Nonterminal, new Merge(c1.Cont, c2.Cont));
                     default:

@@ -124,6 +124,10 @@ namespace ContextFreeSession.Design
 
         public abstract string ToTypeString();
 
+        public abstract override int GetHashCode();
+
+        public abstract override bool Equals(object? obj);
+
         public abstract bool Equals(LocalTypeElement? other);
 
         public virtual string ToExp() { return null; }
@@ -145,6 +149,8 @@ namespace ContextFreeSession.Design
         }
 
         public static bool operator !=(LocalTypeElement? lhs, LocalTypeElement? rhs) => !(lhs == rhs);
+
+
     }
 
     public sealed class Send : LocalTypeElement
@@ -183,6 +189,16 @@ namespace ContextFreeSession.Design
         public override string ToExp()
         {
             return $"new Send<{PayloadType}>({To}, {Label}, {((LocalTypeElement)Cont).ToExp()})";
+        }
+
+        public override int GetHashCode()
+        {
+            return (To, Label).GetHashCode();
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as Send);
         }
 
         public override bool Equals(LocalTypeElement? other)
@@ -232,6 +248,16 @@ namespace ContextFreeSession.Design
         {
             string s = string.Join(" ,", Branches.SelectMany(x => new List<string>() { x.Item1, x.Item2.FullName, ((LocalTypeElement)x.Item3).ToTypeString() }));
             return $"Send<{To}, {s}>";
+        }
+
+        public override int GetHashCode()
+        {
+            return To.GetHashCode() + Branches.Count;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as Select);
         }
 
         public override bool Equals(LocalTypeElement? other)
@@ -311,6 +337,16 @@ namespace ContextFreeSession.Design
             return $"Receive<{From}, {Label}, {PayloadType.FullName}, {((LocalTypeElement)Cont).ToTypeString()}>";
         }
 
+        public override int GetHashCode()
+        {
+            return (From, Label).GetHashCode();
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as Receive);
+        }
+
         public override bool Equals(LocalTypeElement? other)
         {
             if (other is Receive r)
@@ -366,6 +402,17 @@ namespace ContextFreeSession.Design
             return $"Branch<{From}, {s}>";
         }
 
+        public override int GetHashCode()
+        {
+            return From.GetHashCode() + Branches.Count;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as Branch);
+        }
+
+
         public override bool Equals(LocalTypeElement? other)
         {
             if (other is Branch b)
@@ -405,6 +452,16 @@ namespace ContextFreeSession.Design
             return $"Call<{Nonterminal}, {((LocalTypeElement)Cont).ToTypeString()}>";
         }
 
+        public override int GetHashCode()
+        {
+            return Nonterminal.GetHashCode();
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as Call);
+        }
+
         public override bool Equals(LocalTypeElement? other)
         {
             if (other is Call c)
@@ -413,6 +470,7 @@ namespace ContextFreeSession.Design
             }
             return false;
         }
+
 
         /*
         public string ToExp()
@@ -432,6 +490,16 @@ namespace ContextFreeSession.Design
         }
 
         public override bool Equals(LocalTypeElement? other)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool Equals(object? obj)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override int GetHashCode()
         {
             throw new NotImplementedException();
         }
@@ -463,6 +531,16 @@ namespace ContextFreeSession.Design
                 return true;
             }
             return false;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is Epsilon;
+        }
+
+        public override int GetHashCode()
+        {
+            return 1;
         }
 
         public override string ToString()
