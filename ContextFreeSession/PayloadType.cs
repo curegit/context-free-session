@@ -89,15 +89,11 @@ namespace ContextFreeSession.Design
                 {
                     var elementTypes = type.GetGenericArguments();
                     var tupleList = elementTypes.Take(7).ToList();
-
-
                     while (elementTypes.Length == 8)
                     {
                         elementTypes = elementTypes[7].GetGenericArguments();
                         tupleList.AddRange(elementTypes.Take(7));
                     }
-
-
                     return $"({string.Join(", ", tupleList.Select(t => new PayloadType(t).ToString(func)))})";
                 }
                 // その他のジェネリック型
@@ -173,8 +169,5 @@ namespace ContextFreeSession.Design
     }
 
     // null 許容注釈を表現するための型
-    public struct Null<T> where T : class
-    {
-
-    }
+    public struct Null<T> where T : class { }
 }

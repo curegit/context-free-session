@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace ContextFreeSession.Design
 {
-    public partial class GlobalType : IEnumerable<(string, GlobalTypeElement[])>
+    public partial class GlobalType : IEnumerable<(string nonterminal, GlobalTypeElement[] body)>
     {
         private readonly AssociationList<string, List<GlobalTypeElement>> rules = new();
 
@@ -14,27 +14,27 @@ namespace ContextFreeSession.Design
             return GetEnumerator();
         }
 
-        public IEnumerator<(string, GlobalTypeElement[])> GetEnumerator()
+        public IEnumerator<(string nonterminal, GlobalTypeElement[] body)> GetEnumerator()
         {
-            foreach (var (x, y) in rules)
+            foreach (var (nonterminal, body) in rules)
             {
-                yield return (x, y.ToArray());
+                yield return (nonterminal, body.ToArray());
             }
         }
 
-        public void Add(string nonterminal, params GlobalTypeElement[] elements)
+        public void Add(string nonterminal, params GlobalTypeElement[] body)
         {
             if (nonterminal is null)
             {
                 throw new ArgumentNullException(nameof(nonterminal));
             }
-            if (elements is null)
+            if (body is null)
             {
-                throw new ArgumentNullException(nameof(elements));
+                throw new ArgumentNullException(nameof(body));
             }
-            if (elements.Length < 1)
+            if (body.Length < 1)
             {
-                throw new ArgumentException("Attempted to add an empty rule.", nameof(elements));
+                throw new ArgumentException("Attempted to add an empty rule.", nameof(body));
             }
             if (!InvalidNonterminalSymbolException.IsValidNonterminalSymbol(nonterminal))
             {
@@ -44,16 +44,16 @@ namespace ContextFreeSession.Design
             {
                 throw new IdentifierConflictException($"Nonterminal symbol '{nonterminal}' is already used.");
             }
-            rules.Add(nonterminal, elements.ToList());
+            rules.Add(nonterminal, body.ToList());
         }
 
         public override string ToString()
         {
             var accumlator = "";
-            foreach (var (key, value) in rules)
+            foreach (var (nonterminal, body) in rules)
             {
-                accumlator += (key + " {").WithNewLine();
-                foreach (var element in value)
+                accumlator += (nonterminal + " {").WithNewLine();
+                foreach (var element in body)
                 {
                     accumlator += element.ToString().Indented(4).WithNewLine();
                 }
@@ -66,30 +66,27 @@ namespace ContextFreeSession.Design
         {
             get
             {
-                var res = new List<string>();
-                foreach (var (key, value) in rules)
+                var result = new List<string>();
+                foreach (var (nonterminal, body) in rules)
                 {
-                    res.AddRange(value.Where(x => x is Transfer).Cast<Transfer>().SelectMany(x => new string[] { x.From, x.To }));
-
-                    res.AddRange(value.Where(x => x is Choice).Cast<Choice>().SelectMany(x => new string[] { x.From, x.To }));
+                    result.AddRange(body.Where(x => x is Transfer).Cast<Transfer>().SelectMany(x => new string[] { x.From, x.To }));
+                    result.AddRange(body.Where(x => x is Choice).Cast<Choice>().SelectMany(x => new string[] { x.From, x.To }));
                 }
-                return res.Distinct();
+                return result.Distinct();
             }
         }
-
 
         public IEnumerable<string> Labels
         {
             get
             {
-                var res = new List<string>();
-                foreach (var (key, value) in rules)
+                var result = new List<string>();
+                foreach (var (nonterminal, body) in rules)
                 {
-                    res.AddRange(value.Where(x => x is Transfer).Cast<Transfer>().Select(x => x.Label));
-
-                    res.AddRange(value.Where(x => x is Choice).Cast<Choice>().SelectMany(x => x.Select(y => y.Item1)));
+                    result.AddRange(body.Where(x => x is Transfer).Cast<Transfer>().Select(x => x.Label));
+                    result.AddRange(body.Where(x => x is Choice).Cast<Choice>().SelectMany(x => x.Select(y => y.label)));
                 }
-                return res.Distinct();
+                return result.Distinct();
             }
         }
     }
@@ -148,7 +145,7 @@ namespace ContextFreeSession.Design
         }
     }
 
-    public sealed class Choice : GlobalTypeElement, IEnumerable<(string, PayloadType, GlobalTypeElement[])>
+    public sealed class Choice : GlobalTypeElement, IEnumerable<(string label, PayloadType payloadType, GlobalTypeElement[] conts)>
     {
         public string From { get; private set; }
 
@@ -199,7 +196,7 @@ namespace ContextFreeSession.Design
             return GetEnumerator();
         }
 
-        public IEnumerator<(string, PayloadType, GlobalTypeElement[])> GetEnumerator()
+        public IEnumerator<(string label, PayloadType payloadType, GlobalTypeElement[] conts)> GetEnumerator()
         {
             return Cases.Select(c => (c.label, c.payloadType, c.conts.ToArray())).GetEnumerator();
         }
@@ -248,7 +245,7 @@ namespace ContextFreeSession.Design
 
         public static Transfer Send<T>(string from, string to, string label) => new(from, to, label, PayloadType.Create<T>());
 
-        public static Choice Send(string from, string to, params (string, PayloadType, GlobalTypeElement[])[] cases) => new(from, to, cases);
+        public static Choice Send(string from, string to, params (string label, PayloadType payloadType, GlobalTypeElement[] conts)[] cases) => new(from, to, cases);
 
         public static (string, PayloadType, GlobalTypeElement[]) Case(string label, params GlobalTypeElement[] conts) => (label, PayloadType.Create<Unit>(), conts);
 
