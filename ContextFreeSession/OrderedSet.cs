@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace ContextFreeSession
 {
     [Serializable]
-    internal class OrderedSet<T> : IEnumerable<T>
+    internal class OrderedSet<T> : IEnumerable<T>, IEquatable<OrderedSet<T>>
     {
         private readonly List<T> sequence = new();
 
@@ -44,5 +44,36 @@ namespace ContextFreeSession
         {
             return sequence.GetEnumerator();
         }
+
+        public override int GetHashCode()
+        {
+            return set.GetHashCode();
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as OrderedSet<T>);
+        }
+
+        public bool Equals(OrderedSet<T>? other)
+        {
+            if (other == null) return false;
+            return set.SetEquals(other.set);
+        }
+
+        public static bool operator ==(OrderedSet<T>? left, OrderedSet<T>? right)
+        {
+            if (left is null)
+            {
+                if (right is null)
+                {
+                    return true;
+                }
+                return false;
+            }
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(OrderedSet<T>? lhs, OrderedSet<T>? rhs) => !(lhs == rhs);
     }
 }

@@ -1,32 +1,39 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ContextFreeSession.Design
 {
-    public partial class LocalType
+    public partial class LocalType : IEnumerable<(string nonterminal, LocalTypeTerm body)>
     {
         public readonly string Role;
 
-        private readonly AssociationList<string, LocalTypeTerm> Rules;
+        private AssociationList<string, LocalTypeTerm> Rules { get; init; }
 
-        internal LocalType(string role, AssociationList<string, LocalTypeTerm> rs)
+        internal LocalType(string role, AssociationList<string, LocalTypeTerm> rules)
         {
             Role = role;
-            Rules = rs;
+            Rules = rules;
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        public IEnumerator<(string nonterminal, LocalTypeTerm body)> GetEnumerator()
+        {
+            return Rules.GetEnumerator();
         }
 
         public override string ToString()
         {
             var accumlator = "";
-            foreach (var (nonterminal, value) in Rules)
+            foreach (var (nonterminal, body) in Rules)
             {
                 accumlator += (nonterminal + " {").WithNewLine();
-
-                accumlator += value.ToString().Indented(4).WithNewLine();
-
+                accumlator += body.ToString().Indented(4).WithNewLine();
                 accumlator += "}".WithNewLine();
             }
             return accumlator.TrimNewLines();
@@ -37,84 +44,79 @@ namespace ContextFreeSession.Design
     {
         internal LocalTypeTerm() { }
 
-        public abstract LocalTypeTerm Append(LocalTypeTerm local);
+        public abstract LocalTypeTerm Append(LocalTypeTerm cont);
 
         public abstract override string ToString();
     }
 
     public sealed class Merge : LocalTypeTerm
     {
-        public List<LocalTypeTerm> Branches { get; private set; }
+        public IEnumerable<LocalTypeTerm> Branches { get; private set; }
 
         internal Merge(IEnumerable<LocalTypeTerm> branches)
         {
             Branches = branches.ToList();
-            // Flatten merge?
-            //Branches = branches.SelectMany(b => b is Merge merge ? merge.Branches : new List<LocalTypeTerm>() { b }).ToList();
         }
 
-        internal Merge(params LocalTypeTerm[] localTypeTerms)
+        internal Merge(params LocalTypeTerm[] branches)
         {
-            Branches = localTypeTerms.ToList();
+            Branches = branches.ToList();
         }
 
-        public List<LocalTypeTerm> BranchesFlat
+        public IEnumerable<LocalTypeTerm> FlattenedBranches
         {
             get
             {
-                return Branches.SelectMany(b => b is Merge merge ? merge.BranchesFlat : new List<LocalTypeTerm>() { b }).ToList();
+                return Branches.SelectMany(b => b is Merge merge ? merge.FlattenedBranches : new List<LocalTypeTerm>() { b }).ToList();
             }
         }
 
         public LocalTypeTerm Simplify()
         {
-            if (Branches.Count() == 0)
+            if (!Branches.Any())
             {
                 return new Epsilon();
             }
-            if (Branches.Count == 1)
+            if (Branches.Count() == 1)
             {
                 return Branches.First();
             }
             return this;
         }
 
-        public override string ToString()
+        public override LocalTypeTerm Append(LocalTypeTerm cont)
         {
-            var s = "Merge";
-
-            foreach (var b in Branches)
-            {
-                s += " | {".WithNewLine() + b.ToString().TrimNewLines().Indented(4).WithNewLine() + "}";
-            }
-            return s;
+            return new Merge(Branches.Select(b => b.Append(cont)));
         }
 
-        public override LocalTypeTerm Append(LocalTypeTerm local)
+        public override string ToString()
         {
-            return new Merge(Branches.Select(b => b.Append(local)));
+            var accumulator = "⊔";
+            foreach (var b in Branches)
+            {
+                accumulator += " | {".WithNewLine() + b.ToString().TrimNewLines().Indented(4).WithNewLine() + "}";
+            }
+            return accumulator;
         }
     }
 
     public sealed class Star : LocalTypeTerm
     {
-        public LocalTypeTerm E { get; private set; }
+        public LocalTypeTerm Term { get; private set; }
 
-        //public LocalTypeTerm Cont { get; private set; }
-
-        internal Star(LocalTypeTerm e)
+        internal Star(LocalTypeTerm term)
         {
-            E = e;
+            Term = term;
+        }
+
+        public override LocalTypeTerm Append(LocalTypeTerm cont)
+        {
+            throw new NotImplementedException();
         }
 
         public override string ToString()
         {
-            return $"({E})*;".WithNewLine();
-        }
-
-        public override LocalTypeTerm Append(LocalTypeTerm local)
-        {
-            throw new NotImplementedException();
+            return $"({Term})*;".WithNewLine();
         }
     }
 
@@ -130,8 +132,6 @@ namespace ContextFreeSession.Design
 
         public abstract bool Equals(LocalTypeElement? other);
 
-        public virtual string ToExp() { return null; }
-
         public static bool operator ==(LocalTypeElement? left, LocalTypeElement? right)
         {
             if (left is null)
@@ -140,17 +140,12 @@ namespace ContextFreeSession.Design
                 {
                     return true;
                 }
-
-                // Only the left side is null.
                 return false;
             }
-            // Equals handles case of null on right side.
             return left.Equals(right);
         }
 
         public static bool operator !=(LocalTypeElement? lhs, LocalTypeElement? rhs) => !(lhs == rhs);
-
-
     }
 
     public sealed class Send : LocalTypeElement
@@ -171,14 +166,14 @@ namespace ContextFreeSession.Design
             Cont = cont;
         }
 
-        public override string ToString()
+        public override LocalTypeTerm Append(LocalTypeTerm cont)
         {
-            return $"{To} ! {Label}<{PayloadType}>;".WithNewLine() + Cont.ToString();
+            return new Send(To, Label, PayloadType, Cont.Append(cont));
         }
 
-        public override LocalTypeTerm Append(LocalTypeTerm local)
+        public override string ToString()
         {
-            return new Send(To, Label, PayloadType, Cont.Append(local));
+            return ($"{To} ! {Label}<{PayloadType}>;".WithNewLine() + Cont.ToString()).TrimNewLines();
         }
 
         public override string ToTypeString()
@@ -186,14 +181,9 @@ namespace ContextFreeSession.Design
             return $"Send<{To}, {Label}, {PayloadType.FullName}, {((LocalTypeElement)Cont).ToTypeString()}>";
         }
 
-        public override string ToExp()
-        {
-            return $"new Send<{PayloadType}>({To}, {Label}, {((LocalTypeElement)Cont).ToExp()})";
-        }
-
         public override int GetHashCode()
         {
-            return (To, Label).GetHashCode();
+            return HashCode.Combine(To, Label);
         }
 
         public override bool Equals(object? obj)
@@ -216,43 +206,41 @@ namespace ContextFreeSession.Design
 
     public sealed class Select : LocalTypeElement
     {
-        public string To { get; private set; }
+        public readonly string To;
 
-        public List<(string, PayloadType, LocalTypeTerm)> Branches { get; private set; }
+        public readonly IEnumerable<(string label, PayloadType payloadType, LocalTypeTerm cont)> Branches;
 
-        internal Select(string to, IEnumerable<(string, PayloadType payloadType, LocalTypeTerm)> branches)
+        internal Select(string to, IEnumerable<(string label, PayloadType payloadType, LocalTypeTerm cont)> branches)
         {
             To = to;
             Branches = branches.ToList();
         }
 
-        public override string ToString()
+        public override LocalTypeTerm Append(LocalTypeTerm cont)
         {
-            var s = $"{To} !";
-
-            foreach (var b in Branches)
-            {
-                var (label, pay, c) = b;
-                var bs = c.ToString().Indented(4).WithNewLine();
-                s += $" {label}<{pay}> {{".WithNewLine() + bs + "}";
-            }
-            return s;
+            return new Select(To, Branches.Select(b => (b.label, b.payloadType, b.cont.Append(cont))));
         }
 
-        public override LocalTypeTerm Append(LocalTypeTerm local)
+        public override string ToString()
         {
-            return new Select(To, Branches.Select(b => (b.Item1, b.Item2, b.Item3.Append(local))));
+            var accumulator = $"{To} !";
+            foreach (var (label, payloadType, cont) in Branches)
+            {
+                var str = cont.ToString().Indented(4).WithNewLine();
+                accumulator += $" {label}<{payloadType}> {{".WithNewLine() + str + "}";
+            }
+            return accumulator;
         }
 
         public override string ToTypeString()
         {
-            string s = string.Join(" ,", Branches.SelectMany(x => new List<string>() { x.Item1, x.Item2.FullName, ((LocalTypeElement)x.Item3).ToTypeString() }));
-            return $"Send<{To}, {s}>";
+            string str = string.Join(" ,", Branches.SelectMany(x => new List<string>() { x.label, x.payloadType.FullName, ((LocalTypeElement)x.cont).ToTypeString() }));
+            return $"Send<{To}, {str}>";
         }
 
         public override int GetHashCode()
         {
-            return To.GetHashCode() + Branches.Count;
+            return To.GetHashCode() + Branches.Count();
         }
 
         public override bool Equals(object? obj)
@@ -274,31 +262,31 @@ namespace ContextFreeSession.Design
             return false;
         }
 
-        public bool Eq(Select other)
+        private bool Eq(Select other)
         {
             if (other.To == To)
             {
-                var set1 = new HashSet<(string, PayloadType)>(Branches.Select(x => (x.Item1, x.Item2)));
-                var set2 = new HashSet<(string, PayloadType)>(other.Branches.Select(x => (x.Item1, x.Item2)));
+                var set1 = new HashSet<(string, PayloadType)>(Branches.Select(x => (x.label, x.payloadType)));
+                var set2 = new HashSet<(string, PayloadType)>(other.Branches.Select(x => (x.label, x.payloadType)));
                 return set1.SetEquals(set2);
             }
             return false;
         }
 
-        public Select? MergeCont(Select other)
+        public Select? MergeConts(Select other)
         {
             if (Eq(other))
             {
-                var alist = new AssociationList<(string, PayloadType), LocalTypeTerm>();
-                foreach (var (l, t, c) in Branches)
+                var alist = new AssociationList<(string label, PayloadType payloadType), LocalTypeTerm>();
+                foreach (var (label, payloadType, cont) in Branches)
                 {
-                    alist.Add((l, t), c);
+                    alist.Add((label, payloadType), cont);
                 }
-                foreach (var (l, t, c) in other.Branches)
+                foreach (var (label, payloadType, cont) in other.Branches)
                 {
-                    alist[(l, t)] = new Merge(alist[(l, t)], c);
+                    alist[(label, payloadType)] = new Merge(alist[(label, payloadType)], cont);
                 }
-                return new Select(To, alist.Select(x => (x.Item1.Item1, x.Item1.Item2, x.Item2)));
+                return new Select(To, alist.Select(x => (x.key.label, x.key.payloadType, x.value)));
             }
             return null;
         }
@@ -306,13 +294,13 @@ namespace ContextFreeSession.Design
 
     public sealed class Receive : LocalTypeElement
     {
-        public string From { get; private set; }
+        public readonly string From;
 
-        public string Label { get; private set; }
+        public readonly string Label;
 
-        public PayloadType PayloadType { get; private set; }
+        public readonly PayloadType PayloadType;
 
-        public LocalTypeTerm Cont { get; private set; }
+        public readonly LocalTypeTerm Cont;
 
         internal Receive(string from, string label, PayloadType payloadType, LocalTypeTerm cont)
         {
@@ -322,14 +310,14 @@ namespace ContextFreeSession.Design
             Cont = cont;
         }
 
+        public override LocalTypeTerm Append(LocalTypeTerm cont)
+        {
+            return new Receive(From, Label, PayloadType, Cont.Append(cont));
+        }
+
         public override string ToString()
         {
             return $"{From} ? {Label}<{PayloadType}>;".WithNewLine() + Cont.ToString();
-        }
-
-        public override LocalTypeTerm Append(LocalTypeTerm local)
-        {
-            return new Receive(From, Label, PayloadType, Cont.Append(local));
         }
 
         public override string ToTypeString()
@@ -339,7 +327,7 @@ namespace ContextFreeSession.Design
 
         public override int GetHashCode()
         {
-            return (From, Label).GetHashCode();
+            return HashCode.Combine(From, Label);
         }
 
         public override bool Equals(object? obj)
@@ -359,52 +347,48 @@ namespace ContextFreeSession.Design
 
     public class Branch : LocalTypeElement
     {
-        public string From { get; private set; }
+        public readonly string From;
 
-        public List<(string[], LocalTypeTerm)> Branches { get; private set; }
+        public readonly IEnumerable<(string[] labels, LocalTypeTerm cont)> Branches;
 
-        internal Branch(string from, IEnumerable<(string, LocalTypeTerm)> branches)
+        internal Branch(string from, IEnumerable<(string label, LocalTypeTerm cont)> branches)
         {
             From = from;
-            Branches = branches.Select(b => (new string[] { b.Item1 }, b.Item2)).ToList();
+            Branches = branches.Select(b => (new string[] { b.label }, b.cont)).ToList();
         }
 
-        internal Branch(string from, IEnumerable<(string[], LocalTypeTerm)> branches)
+        internal Branch(string from, IEnumerable<(string[] labels, LocalTypeTerm cont)> branches)
         {
             From = from;
             Branches = branches.ToList();
         }
 
-
+        public override LocalTypeTerm Append(LocalTypeTerm cont)
+        {
+            return new Branch(From, Branches.Select(b => (b.labels, b.cont.Append(cont))));
+        }
 
         public override string ToString()
         {
-            var s = $"{From} ??";
-
-            foreach (var b in Branches)
+            var str = $"{From} ??";
+            foreach (var (label, cont) in Branches)
             {
-                var (label, c) = b;
                 var labelstr = string.Join(",", label);
-                var bs = c.ToString().Indented(4).WithNewLine();
-                s += $" {labelstr} {{".WithNewLine() + bs + "}";
+                var cstr = cont.ToString().Indented(4).WithNewLine();
+                str += $" {labelstr} {{".WithNewLine() + cstr + "}";
             }
-            return s;
-        }
-
-        public override LocalTypeTerm Append(LocalTypeTerm local)
-        {
-            return new Branch(From, Branches.Select(b => (b.Item1, b.Item2.Append(local))));
+            return str;
         }
 
         public override string ToTypeString()
         {
-            string s = string.Join(" ,", Branches.SelectMany(x => new List<string>() { "Labels<" + string.Join(" ,", x.Item1) + ">", ((LocalTypeElement)x.Item2).ToTypeString() }));
-            return $"Branch<{From}, {s}>";
+            string str = string.Join(" ,", Branches.SelectMany(x => new List<string>() { "Labels<" + string.Join(" ,", x.labels) + ">", ((LocalTypeElement)x.cont).ToTypeString() }));
+            return $"Branch<{From}, {str}>";
         }
 
         public override int GetHashCode()
         {
-            return From.GetHashCode() + Branches.Count;
+            return From.GetHashCode() + Branches.Count();
         }
 
         public override bool Equals(object? obj)
@@ -412,13 +396,16 @@ namespace ContextFreeSession.Design
             return Equals(obj as Branch);
         }
 
-
         public override bool Equals(LocalTypeElement? other)
         {
-            if (other is Branch b)
+            if (other is Branch branch)
             {
-                // TODO
-                return From == b.From;
+                if (From == branch.From)
+                {
+                    var set1 = new HashSet<(OrderedSet<string>, LocalTypeTerm)>(Branches.Select(x => (new OrderedSet<string>(x.labels), x.cont)));
+                    var set2 = new HashSet<(OrderedSet<string>, LocalTypeTerm)>(branch.Branches.Select(x => (new OrderedSet<string>(x.labels), x.cont)));
+                    return set1.SetEquals(set2);
+                }
             }
             return false;
         }
@@ -426,26 +413,25 @@ namespace ContextFreeSession.Design
 
     public class Call : LocalTypeElement
     {
-        public string Nonterminal;
+        public readonly string Nonterminal;
 
-        public LocalTypeTerm Cont { get; private set; }
+        public readonly LocalTypeTerm Cont;
 
-        internal Call(string c, LocalTypeTerm cont)
+        internal Call(string nonterminal, LocalTypeTerm cont)
         {
-            Nonterminal = c;
+            Nonterminal = nonterminal;
             Cont = cont;
+        }
+
+        public override LocalTypeTerm Append(LocalTypeTerm cont)
+        {
+            return new Call(Nonterminal, Cont.Append(cont));
         }
 
         public override string ToString()
         {
             return $"{Nonterminal}();".WithNewLine() + Cont.ToString();
         }
-
-        public override LocalTypeTerm Append(LocalTypeTerm local)
-        {
-            return new Call(Nonterminal, Cont.Append(local));
-        }
-
 
         public override string ToTypeString()
         {
@@ -470,77 +456,15 @@ namespace ContextFreeSession.Design
             }
             return false;
         }
-
-
-        /*
-        public string ToExp()
-        {
-            return $"new Call(\"{Nonterminal}\", {Cont.ToExp()})";
-        }
-        */
-    }
-
-    public class End : LocalTypeElement
-    {
-        internal End() { }
-
-        public override LocalTypeTerm Append(LocalTypeTerm local)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override bool Equals(LocalTypeElement? other)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override bool Equals(object? obj)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override int GetHashCode()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override string ToString()
-        {
-            return "END";
-        }
-
-        public override string ToTypeString()
-        {
-            throw new NotImplementedException();
-        }
     }
 
     public class Epsilon : LocalTypeElement
     {
         internal Epsilon() { }
 
-        public override LocalTypeTerm Append(LocalTypeTerm local)
+        public override LocalTypeTerm Append(LocalTypeTerm cont)
         {
-            return local;
-        }
-
-        public override bool Equals(LocalTypeElement? other)
-        {
-            if (other is Epsilon)
-            {
-                return true;
-            }
-            return false;
-        }
-
-        public override bool Equals(object? obj)
-        {
-            return obj is Epsilon;
-        }
-
-        public override int GetHashCode()
-        {
-            return 1;
+            return cont;
         }
 
         public override string ToString()
@@ -551,6 +475,25 @@ namespace ContextFreeSession.Design
         public override string ToTypeString()
         {
             return "Eps";
+        }
+
+        public override int GetHashCode()
+        {
+            return 1;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is Epsilon;
+        }
+
+        public override bool Equals(LocalTypeElement? other)
+        {
+            if (other is Epsilon)
+            {
+                return true;
+            }
+            return false;
         }
     }
 }

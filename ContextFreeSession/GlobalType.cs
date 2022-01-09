@@ -100,13 +100,13 @@ namespace ContextFreeSession.Design
 
     public sealed class Transfer : GlobalTypeElement
     {
-        public string From { get; private set; }
+        public readonly string From;
 
-        public string To { get; private set; }
+        public readonly string To;
 
-        public string Label { get; private set; }
+        public readonly string Label;
 
-        public PayloadType PayloadType { get; private set; }
+        public readonly PayloadType PayloadType;
 
         public Transfer(string from, string to, string label, PayloadType payloadType)
         {
@@ -147,9 +147,9 @@ namespace ContextFreeSession.Design
 
     public sealed class Choice : GlobalTypeElement, IEnumerable<(string label, PayloadType payloadType, GlobalTypeElement[] conts)>
     {
-        public string From { get; private set; }
+        public readonly string From;
 
-        public string To { get; private set; }
+        public readonly string To;
 
         private readonly List<(string label, PayloadType payloadType, List<GlobalTypeElement> conts)> Cases;
 
@@ -226,7 +226,7 @@ namespace ContextFreeSession.Design
 
     public sealed class Recursion : GlobalTypeElement
     {
-        public string Nonterminal { get; private set; }
+        public readonly string Nonterminal;
 
         public Recursion(string nonterminal)
         {

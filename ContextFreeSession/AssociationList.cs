@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace ContextFreeSession
 {
     [Serializable]
-    internal class AssociationList<TKey, TValue> : IEnumerable<(TKey, TValue)> where TKey : notnull
+    internal class AssociationList<TKey, TValue> : IEnumerable<(TKey key, TValue value)> where TKey : notnull
     {
         private readonly Dictionary<TKey, TValue> dictionary = new();
 
@@ -42,7 +42,7 @@ namespace ContextFreeSession
             return GetEnumerator();
         }
 
-        public IEnumerator<(TKey, TValue)> GetEnumerator()
+        public IEnumerator<(TKey key, TValue value)> GetEnumerator()
         {
             foreach (var key in keys)
             {
