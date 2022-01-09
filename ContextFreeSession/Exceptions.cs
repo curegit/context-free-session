@@ -103,6 +103,18 @@ namespace ContextFreeSession
     }
 
     [Serializable]
+    public sealed class ReflexiveMessageException : Exception
+    {
+        internal ReflexiveMessageException() : base() { }
+
+        internal InvalidGlobalTypeException(string? message) : base(message) { }
+
+        internal ReflexiveMessageException(string? message, Exception? inner) : base(message, inner) { }
+
+        private ReflexiveMessageException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+    }
+
+    [Serializable]
     public sealed class LinearityViolationException : InvalidOperationException
     {
         internal LinearityViolationException() : base() { }

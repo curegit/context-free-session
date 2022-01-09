@@ -30,7 +30,21 @@ namespace ContextFreeSession.Runtime
         }
     }
 
-    public class Send<To, L1, T1, S1, L2, T2, S2> : Session
+    public interface IUnitSend<To, L, S> { }
+
+    public class Send1<To, L1, S1> : Session, IUnitSend<To, L1, S1>
+    { }
+
+    public class Send1<To, L1, S1, T1> : Session { }
+
+    public class Send2<To, L1, S1, T1, L2, S2> : Send1<To, L1, S1, T1>, IUnitSend<To, L2, S2> { }
+
+    public class Send2<To, L1, S1, L2, S2> : Send1<To, L1, S1>, IUnitSend<To, L2, S2>
+    {
+        S2 send<D, label2>() where D : To where label2 : L2 { return default(S2); }
+    }
+
+    public class Send<To, L1, T1, S1, L2, T2, S2> : Session, IUnitSend<To, L1, S1>
     {
         /*
         public S1 send<D, label1>(T1 t = default) where D : To where label1 : struct, L1 where D : struct, Unit
@@ -54,6 +68,15 @@ namespace ContextFreeSession.Runtime
             return default(S2);
         }
     }
+
+    public class Send<To, L1, S1, L2, T2, S2> : Send<To, L1, Unit, S1, T2, L2, S2>
+    {
+        public S1 send<D, La1>(Unit unit = default) where La1 : L1 { return default(S1); }
+
+        public S2 send<D, La2>() where La2 : L2 { return default(S2); }
+    }
+
+
 
     public static class SendEx
     {

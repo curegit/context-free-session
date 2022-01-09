@@ -8,7 +8,7 @@ namespace ContextFreeSession.Design
 {
     public partial class GlobalType
     {
-        public string Generate()
+        public string Generate(NewLineMode newLine = NewLineMode.Environment)
         {
             var res = "";
 
@@ -49,5 +49,12 @@ namespace ContextFreeSession.Design
             }
             return res;
         }
+    }
+
+    public enum NewLineMode
+    {
+        Environment = 0,
+        LF = 1,
+        CRLF = 2,
     }
 }

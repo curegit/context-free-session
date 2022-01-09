@@ -6,7 +6,7 @@ namespace ContextFreeSession
 {
     internal static class TextUtility
     {
-        public static readonly string NewLine = "\n";
+        public static readonly string NewLine = Environment.NewLine;
 
         public static bool IsDigit(this char letter)
         {

@@ -2,9 +2,15 @@ using ContextFreeSession.Runtime;
 
 using ContextFreeSession;
 
-var a = new LoggerStart();
 
-a.Do(LS).recv<Sender, end>(out var n);
+
+
+
+
+
+var ch = new LoggerStart();
+
+ch.Do(LS).Receive<Sender, end>(out var n).Close();
 
 Eps LS(LoggerTree s)
 {
@@ -19,15 +25,30 @@ Eps LS_(LoggerTree_ s)
         );
 }
 
-var b = new SenderStart();
 
-b.Do(ST).send<Logger, end>();
+new ReceiverStart().Do(ReceiveTree).Close();
 
-Eps ST(SenderTree s)
+Eps ReceiveTree(ReceiverTree s)
+{
+    return s.branch(
+        node => node.recv<Sender, node>(out var b).Do(ReceiveTree).Do(ReceiveTree),
+        leaf => leaf.recv<Sender, leaf>(out var n)
+    );
+}
+
+
+
+var tree = (1, (2, 3), 4, (5, 6));
+
+var ch1 = new SenderStart();
+
+ch1.Do(SendTree).send<Logger, end>();
+
+Eps SendTree(SenderTree s, )
 {
     if (true)
     {
-        return s.send<Receiver, node>(new ContextFreeSession.Unit()).Do(ST).Do(ST);
+        return s.send<Receiver, node>(new ContextFreeSession.Unit()).Do(SendTree).Do(SendTree);
     }
     else
     {

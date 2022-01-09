@@ -1,88 +1,71 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ContextFreeSession.Design
 {
     public partial class GlobalType
     {
-        public void Validate(string role)
+        public LocalType ToLocal(string role)
         {
-            //throw new NotImplementedException();
+            return new LocalType(role, MapToLocal(role, this));
         }
 
         public LocalType Project(string role)
         {
-            Validate(role);
-            var ls = MapToLocalTerms(role, this);
-
-            var local = new LocalType(role, ls);
-
-            // local.SimplifyEps();
-            // local.CheckLoop();
-
+            var local = ToLocal(role);
             local.EliminateLeftRecursion();
-
-            Console.WriteLine(local);
-
             local.Determinize();
-
             return local;
         }
 
-        private static AssociationList<string, LocalTypeTerm> MapToLocalTerms(string role, GlobalType globalType)
+        private static AssociationList<string, LocalTypeTerm> MapToLocal(string role, GlobalType globalType)
         {
-            var dic = new AssociationList<string, LocalTypeTerm>();
-            foreach (var t in globalType)
+            var rules = new AssociationList<string, LocalTypeTerm>();
+            foreach (var (nonterminal, body) in globalType)
             {
-                var newnont = role + t.Item1;
-                dic.Add(newnont, LocalMap(role, t.Item2));
+                var newNonterminal = role + nonterminal;
+                rules.Add(newNonterminal, MapRuleToLocal(role, body));
             }
-            return dic;
+            return rules;
         }
 
-        private static LocalTypeTerm LocalMap(string role, IEnumerable<GlobalTypeElement> elements)
+        private static LocalTypeTerm MapRuleToLocal(string role, IEnumerable<GlobalTypeElement> body)
         {
-            if (elements.Any())
+            if (body.Any())
             {
-                var head = elements.First();
-                switch (head)
+                switch (body.First())
                 {
                     case Transfer t:
-                        var tail = LocalMap(role, elements.Skip(1));
                         if (role == t.From)
                         {
-                            return new Send(t.To, t.Label, t.PayloadType, tail);
+                            return new Send(t.To, t.Label, t.PayloadType, MapRuleToLocal(role, body.Skip(1)));
                         }
                         else if (role == t.To)
                         {
-                            return new Receive(t.From, t.Label, t.PayloadType, tail);
+                            return new Receive(t.From, t.Label, t.PayloadType, MapRuleToLocal(role, body.Skip(1)));
                         }
                         else
                         {
-                            return tail;
+                            return MapRuleToLocal(role, body.Skip(1));
                         }
-                    case Choice t:
-                        if (role == t.From)
+                    case Choice c:
+                        if (role == c.From)
                         {
-                            return new Select(t.To, t.Select(t => (t.Item1, t.Item2, LocalMap(role, t.Item3.Concat(elements.Skip(1))))));
+                            return new Select(c.To, c.Select(b => (b.label, b.payloadType, MapRuleToLocal(role, b.conts.Concat(body.Skip(1))))));
                         }
-                        else if (role == t.To)
+                        else if (role == c.To)
                         {
-                            //return new RCBranch(t.From, t.Select(x => (x.Item1, x.Item2, LocalMap(role, x.Item3.Concat(elements.Skip(1))))));
-                            return new Branch(t.From, t.Select(c => (c.Item1, new Receive(t.From, c.Item1, c.Item2, LocalMap(role, c.Item3.Concat(elements.Skip(1)))) as LocalTypeTerm)));
+                            return new Branch(c.From, c.Select(b => (b.label, (LocalTypeTerm)new Receive(c.From, b.label, b.payloadType, MapRuleToLocal(role, b.conts.Concat(body.Skip(1)))))));
                         }
                         else
                         {
-                            return new Merge(t.Select(x => LocalMap(role, x.Item3.Concat(elements.Skip(1)))));
+                            return new Merge(c.Select(x => MapRuleToLocal(role, x.conts.Concat(body.Skip(1)))));
                         }
-                    case Recursion t:
-                        var tail2 = LocalMap(role, elements.Skip(1));
-                        return new Call(role + t.Nonterminal, tail2);
+                    case Recursion r:
+                        return new Call(role + r.Nonterminal, MapRuleToLocal(role, body.Skip(1)));
                     default:
-                        throw new Exception();
+                        throw new NotImplementedException();
                 }
             }
             else
@@ -90,10 +73,6 @@ namespace ContextFreeSession.Design
                 return new Epsilon();
             }
         }
-
-
-
-
     }
 
     public partial class LocalType
@@ -104,53 +83,41 @@ namespace ContextFreeSession.Design
             SolveMerge();
         }
 
-        // no loop, no epsilon
         public void EliminateLeftRecursion()
         {
-            var rs = Rules;
-
-            for (var i = 0; i < rs.Count; i++)
+            // この左再帰除去アルゴリズムは文法に循環と空規則がないなら必ず成功する
+            for (var i = 0; i < Rules.Count; i++)
             {
-                // kansetsu
+                // 間接左再帰を除去
                 for (var j = 0; j < i; j++)
                 {
-                    var (rkey, r) = rs.ElementAt(i);
-                    var (jsym, jr) = rs.ElementAt(j);
-
-                    //var r = rs.ElementAt(i).Value;
-                    //var rkey = rs.ElementAt(i).Key;
-                    //var jsym = rs.ElementAt(j).Key;
-                    //var jr = rs.ElementAt(j).Value;
-                    if (r is Call c && c.Nonterminal == jsym)
+                    var (n1, t1) = Rules.ElementAt(i);
+                    var (n2, t2) = Rules.ElementAt(j);
+                    if (t1 is Call c && c.Nonterminal == n2)
                     {
-                        rs[rkey] = jr.Append(c.Cont);
+                        Rules[n1] = t2.Append(c.Cont);
                     }
-                    else if (r is Merge m)
+                    else if (t1 is Merge m)
                     {
-                        var bs = m.BranchesFlat.Select(x => (x is Call c && c.Nonterminal == jsym) ? jr.Append(c.Cont) : x);
-                        rs[rkey] = new Merge(bs).Simplify();
+                        Rules[n1] = new Merge(m.FlattenedBranches.Select(x => (x is Call c && c.Nonterminal == n2) ? t2.Append(c.Cont) : x)).Simplify();
                     }
-                    else if (r is Star)
+                    else if (t1 is Star)
                     {
                         throw new NotImplementedException();
                     }
                 }
-                // direct
-                var (s, e) = rs.ElementAt(i);
-                //var s = rs.ElementAt(i).Key;
-                // var e = rs.ElementAt(i).Value;
-                if (e is Call && ((Call)e).Nonterminal == s)
+                // 直接左再帰を除去
+                var (n, t) = Rules.ElementAt(i);
+                if (t is Call call && call.Nonterminal == n)
                 {
                     // 
                     throw new Exception();
                 }
-                else if (e is Merge)
+                else if (t is Merge m)
                 {
-                    var m = (Merge)e;
+                    var bs = m.FlattenedBranches;
 
-                    var bs = m.BranchesFlat;
-
-                    var als = bs.Where(b => b is Call && ((Call)b).Nonterminal == s);
+                    var als = bs.Where(b => b is Call c && c.Nonterminal == n);
                     var betas = bs.Except(als);
 
                     var alphas = als.Select(b => ((Call)b).Cont);
@@ -169,7 +136,7 @@ namespace ContextFreeSession.Design
                     var ins = new Merge(alphas).Simplify();
                     var a1 = new Star(ins);
                     var app = b1.Append(a1);
-                    rs[s] = app;
+                    Rules[n] = app;
                 }
             }
         }
@@ -296,7 +263,7 @@ namespace ContextFreeSession.Design
 
                 // 右側からmergeするので Merge はでてこない
 
-                var brs = m.BranchesFlat.Cast<LocalTypeElement>();
+                var brs = m.FlattenedBranches.Cast<LocalTypeElement>();
 
                 var t1 = brs.ElementAt(0);
 
@@ -392,6 +359,7 @@ namespace ContextFreeSession.Design
 
                         default:
                             throw new Exception();
+
                     }
                 }
             }
@@ -414,9 +382,9 @@ namespace ContextFreeSession.Design
                 {
                     case (Send s1, Send s2) when s1.To == s2.To && s1.Label == s2.Label && s1.PayloadType == s2.PayloadType:
                         return new Send(s1.To, s1.Label, s1.PayloadType, new Merge(s1.Cont, s2.Cont));
-                    case (Select l1, Select l2) when l1.MergeCont(l2) is Select res:
+                    case (Select l1, Select l2) when l1.MergeConts(l2) is Select res:
                         return res;
-                        //return new Select(l1.To, l1.Branches.Select(x => (x.Item1, x.Item2, (LocalTypeTerm)new Merge(x.Item3, l2.Branches.Where(y => y.Item1 == x.Item1).First().Item3))));
+                    //return new Select(l1.To, l1.Branches.Select(x => (x.Item1, x.Item2, (LocalTypeTerm)new Merge(x.Item3, l2.Branches.Where(y => y.Item1 == x.Item1).First().Item3))));
                     case (Call c1, Call c2) when c1.Nonterminal == c2.Nonterminal:
                         return new Call(c1.Nonterminal, new Merge(c1.Cont, c2.Cont));
                     default:
@@ -495,7 +463,7 @@ namespace ContextFreeSession.Design
         private LocalTypeElement StarStep(Star s, string context)
         {
             Console.WriteLine(context);
-            var bs = ClousureFirstRecv(s.E);
+            var bs = ClousureFirstRecv(s.Term);
             var fs = FollowRecv(context);
 
 
@@ -519,7 +487,7 @@ namespace ContextFreeSession.Design
             // A -> alpha A'
             // A' -> beta A' | Eps
             var newSym = context + "_";
-            var br1 = (bs.Labels.ToArray(), s.E.Append(new Call(newSym, new Epsilon())));
+            var br1 = (bs.Labels.ToArray(), s.Term.Append(new Call(newSym, new Epsilon())));
             var br2 = (fs.Labels.ToArray(), new Epsilon());
             var newRule = new Branch(bs.From, new List<(string[], LocalTypeTerm)>() { br1, br2 });
             Rules.Add(newSym, newRule);
@@ -609,7 +577,7 @@ namespace ContextFreeSession.Design
                     if (y.Any(x => x is null)) return null;
                     return ReceiveCanditate.Union(y);
                 case Star st:
-                    return FollowRecv2(nonterminal, st.E, context);
+                    return FollowRecv2(nonterminal, st.Term, context);
                 case Merge m:
                     var ys = m.Branches.Select(x => FollowRecv2(nonterminal, x, context));
                     //var vs = m.Branches.Select(FirstRecv);
