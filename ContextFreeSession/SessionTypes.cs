@@ -1,113 +1,245 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ContextFreeSession.Runtime
 {
-    public interface ILabel { }
-
     public interface IRole { }
 
-    public class Labels<T>
+    public interface ILabel { }
+
+    public abstract class Session
     {
+        internal Session() { }
 
-    }
+        internal bool used;
 
-    public class Session { }
+        private ICommunicator? communicator;
 
-    public class Send<To, L, T, S> : Session
-    {
-        public S send<D, label>() where D : To where label : L
+        public virtual string Role
         {
-            return default(S);
+            get
+            {
+                throw new NotImplementedException();
+            }
         }
 
-        public S send<D, label>(T a) where D : To where label : L
+        internal ICommunicator Communicator
         {
-            return default(S);
-        }
-    }
-
-    public interface IUnitSend<To, L, S> { }
-
-    public class Send1<To, L1, S1> : Session, IUnitSend<To, L1, S1>
-    { }
-
-    public class Send1<To, L1, S1, T1> : Session { }
-
-    public class Send2<To, L1, S1, T1, L2, S2> : Send1<To, L1, S1, T1>, IUnitSend<To, L2, S2> { }
-
-    public class Send2<To, L1, S1, L2, S2> : Send1<To, L1, S1>, IUnitSend<To, L2, S2>
-    {
-        S2 send<D, label2>() where D : To where label2 : L2 { return default(S2); }
-    }
-
-    public class Send<To, L1, T1, S1, L2, T2, S2> : Session, IUnitSend<To, L1, S1>
-    {
-        /*
-        public S1 send<D, label1>(T1 t = default) where D : To where label1 : struct, L1 where D : struct, Unit
-        {
-            return default(S1);
-        }
-
-        public S2 send<D, label2>() where D : To where label2 : struct, L2
-        {
-            return default(S2);
-        }
-        */
-
-        public S1 send<D, label1>(T1 t) where D : To where label1 : L1
-        {
-            return default(S1);
-        }
-
-        public S2 send<D, label2>(T2 a) where D : To where label2 : L2
-        {
-            return default(S2);
+            get
+            {
+                return communicator ?? throw new InvalidOperationException();
+            }
+            set
+            {
+                communicator = value;
+            }
         }
     }
 
-    public class Send<To, L1, S1, L2, T2, S2> : Send<To, L1, Unit, S1, T2, L2, S2>
+    public class SendSession<To, L, T, S> : Session where To : IRole where L : ILabel where S : Session
     {
-        public S1 send<D, La1>(Unit unit = default) where La1 : L1 { return default(S1); }
-
-        public S2 send<D, La2>() where La2 : L2 { return default(S2); }
-    }
-
-
-
-    public static class SendEx
-    {
-
-    }
-
-    public class Receive<From, L, T, S> : Session
-    {
-        public S recv<F, La>(out T a) where F : From where La : L
+        public S Send<to, label>(T value) where to : To where label : L
         {
-            a = default(T);
-            return default (S);
+            if (used) throw new LinearityViolationException();
+            used = true;
+            var toString = typeof(to).ToString();
+            var labelString = typeof(label).ToString();
+            Communicator.Send(toString, labelString, value);
+            var session = (S)Activator.CreateInstance(typeof(S), true)!;
+            session.Communicator = Communicator;
+            return session;
         }
     }
 
-    public class Branch<From, LS1, S1, LS2, S2> : Session
+    public class SendSession<To, L1, T1, S1, L2, T2, S2> : Session where To : IRole where L1 : ILabel where S1 : Session where L2 : ILabel where S2 : Session
     {
-        public Eps branch(Func<S1, Eps> f1, Func<S2, Eps> f2)
+        public S1 Send<to, label>(T1 value) where to : To where label : L1
         {
-            return f1(default(S1));
+            if (used) throw new LinearityViolationException();
+            used = true;
+            var toString = typeof(to).ToString();
+            var labelString = typeof(label).ToString();
+            Communicator.Send(toString, labelString, value);
+            var session = (S1)Activator.CreateInstance(typeof(S1), true)!;
+            session.Communicator = Communicator;
+            return session;
+        }
+
+        public S2 Send<to, label>(T2 value) where to : To where label : L2
+        {
+            if (used) throw new LinearityViolationException();
+            used = true;
+            var toString = typeof(to).ToString();
+            var labelString = typeof(label).ToString();
+            Communicator.Send(toString, labelString, value);
+            var session = (S2)Activator.CreateInstance(typeof(S2), true)!;
+            session.Communicator = Communicator;
+            return session;
         }
     }
 
-    public class Call<S, SC> : Session
+    public class SendSession<To, L1, T1, S1, L2, T2, S2, L3, T3, S3> : Session where To : IRole where L1 : ILabel where S1 : Session where L2 : ILabel where S2 : Session where L3 : ILabel where S3 : Session
     {
-        public SC Do(Func<S, Eps> deleg)
+        public S1 Send<to, label>(T1 value) where to : To where label : L1
         {
-            deleg(default(S));
-            return default(SC);
+            if (used) throw new LinearityViolationException();
+            used = true;
+            var toString = typeof(to).ToString();
+            var labelString = typeof(label).ToString();
+            Communicator.Send(toString, labelString, value);
+            var session = (S1)Activator.CreateInstance(typeof(S1), true)!;
+            session.Communicator = Communicator;
+            return session;
+        }
+
+        public S2 Send<to, label>(T2 value) where to : To where label : L2
+        {
+            if (used) throw new LinearityViolationException();
+            used = true;
+            var toString = typeof(to).ToString();
+            var labelString = typeof(label).ToString();
+            Communicator.Send(toString, labelString, value);
+            var session = (S2)Activator.CreateInstance(typeof(S2), true)!;
+            session.Communicator = Communicator;
+            return session;
+        }
+
+        public S3 Send<to, label>(T3 value) where to : To where label : L3
+        {
+            if (used) throw new LinearityViolationException();
+            used = true;
+            var toString = typeof(to).ToString();
+            var labelString = typeof(label).ToString();
+            Communicator.Send(toString, labelString, value);
+            var session = (S3)Activator.CreateInstance(typeof(S3), true)!;
+            session.Communicator = Communicator;
+            return session;
         }
     }
 
-    public class Eps : Session { }
+    public class ReceiveSession<From, L, T, S> : Session where L : ILabel where S : Session
+    {
+        public S Receive<from, label>(out T result) where from : From where label : L
+        {
+            if (used) throw new LinearityViolationException();
+            used = true;
+            var fromString = typeof(from).ToString();
+            var labelString = typeof(label).ToString();
+            (var l, result) = Communicator.Receive<T>(fromString, labelString);
+            if (l != labelString) throw new UnexpectedLabelException();
+            var session = (S)Activator.CreateInstance(typeof(S), true)!;
+            session.Communicator = Communicator;
+            return session;
+        }
+    }
+
+    internal static class BranchUtility
+    {
+        public static bool ContainsLabel<LS>(string label)
+        {
+            var type = typeof(LS);
+            if (type.IsGenericType)
+            {
+                var elementTypes = type.GetGenericArguments();
+                var tupleList = elementTypes.Take(7).ToList();
+                while (elementTypes.Length == 8)
+                {
+                    elementTypes = elementTypes[7].GetGenericArguments();
+                    tupleList.AddRange(elementTypes.Take(7));
+                }
+                return tupleList.Any(x => x.ToString() == label);
+            }
+            else
+            {
+                return label == typeof(LS).ToString();
+            }
+        }
+    }
+
+    public class BranchSession<From, LS1, S1, LS2, S2> : Session where From : IRole where S1 : Session where S2 : Session
+    {
+        public Eps Branch<from, labels1, labels2>(Func<S1, Eps> f1, Func<S2, Eps> f2) where from : From
+        {
+            if (f1 is null) throw new ArgumentNullException(nameof(f1));
+            if (f2 is null) throw new ArgumentNullException(nameof(f2));
+            if (used) throw new LinearityViolationException();
+            used = true;
+            var fromString = typeof(from).ToString();
+            var label = Communicator.Branch(fromString);
+            if (BranchUtility.ContainsLabel<labels1>(label))
+            {
+                var session = (S1)Activator.CreateInstance(typeof(S1), true)!;
+                session.Communicator = Communicator;
+                return f1(session);
+            }
+            if (BranchUtility.ContainsLabel<labels2>(label))
+            {
+                var session = (S2)Activator.CreateInstance(typeof(S2), true)!;
+                session.Communicator = Communicator;
+                return f2(session);
+            }
+            throw new UnexpectedLabelException();
+        }
+    }
+
+    public class BranchSession<From, LS1, S1, LS2, S2, LS3, S3> : Session where From : IRole where S1 : Session where S2 : Session where S3 : Session
+    {
+        public Eps Branch<from, labels1, labels2, labels3>(Func<S1, Eps> f1, Func<S2, Eps> f2, Func<S3, Eps> f3) where from : From
+        {
+            if (f1 is null) throw new ArgumentNullException(nameof(f1));
+            if (f2 is null) throw new ArgumentNullException(nameof(f2));
+            if (f3 is null) throw new ArgumentNullException(nameof(f3));
+            if (used) throw new LinearityViolationException();
+            used = true;
+            var fromString = typeof(from).ToString();
+            var label = Communicator.Branch(fromString);
+            if (BranchUtility.ContainsLabel<labels1>(label))
+            {
+                var session = (S1)Activator.CreateInstance(typeof(S1), true)!;
+                session.Communicator = Communicator;
+                return f1(session);
+            }
+            if (BranchUtility.ContainsLabel<labels2>(label))
+            {
+                var session = (S2)Activator.CreateInstance(typeof(S2), true)!;
+                session.Communicator = Communicator;
+                return f2(session);
+            }
+            if (BranchUtility.ContainsLabel<labels3>(label))
+            {
+                var session = (S3)Activator.CreateInstance(typeof(S3), true)!;
+                session.Communicator = Communicator;
+                return f3(session);
+            }
+            throw new UnexpectedLabelException();
+        }
+    }
+
+    public class Call<S, C> : Session where S : Session where C : Session
+    {
+        public C Do(Func<S, Eps> deleg)
+        {
+            if (deleg is null) throw new ArgumentNullException(nameof(deleg));
+            if (used) throw new LinearityViolationException();
+            used = true;
+            var inner = (S)Activator.CreateInstance(typeof(S), true)!;
+            inner.Communicator = Communicator;
+            var eps = deleg(inner);
+            if (eps.used) throw new LinearityViolationException();
+            eps.used = true;
+            var session = (C)Activator.CreateInstance(typeof(C), true)!;
+            session.Communicator = eps.Communicator;
+            return session;
+        }
+    }
+
+    public class Eps : Session
+    {
+        public void Close()
+        {
+            if (used) throw new LinearityViolationException();
+            used = true;
+            Communicator.Close();
+        }
+    }
 }

@@ -180,7 +180,7 @@ namespace ContextFreeSession.Design
 
         public override string ToTypeString()
         {
-            return $"Send<{To}, {Label}, {PayloadType.FullName}, {((LocalTypeElement)Cont).ToTypeString()}>";
+            return $"SendSession<{To}, {Label}, {PayloadType.FullName}, {((LocalTypeElement)Cont).ToTypeString()}>";
         }
 
         public override int GetHashCode()
@@ -237,7 +237,7 @@ namespace ContextFreeSession.Design
         public override string ToTypeString()
         {
             string str = string.Join(" ,", Branches.SelectMany(x => new List<string>() { x.label, x.payloadType.FullName, ((LocalTypeElement)x.cont).ToTypeString() }));
-            return $"Send<{To}, {str}>";
+            return $"SendSession<{To}, {str}>";
         }
 
         public override int GetHashCode()
@@ -324,7 +324,7 @@ namespace ContextFreeSession.Design
 
         public override string ToTypeString()
         {
-            return $"Receive<{From}, {Label}, {PayloadType.FullName}, {((LocalTypeElement)Cont).ToTypeString()}>";
+            return $"ReceiveSession<{From}, {Label}, {PayloadType.FullName}, {((LocalTypeElement)Cont).ToTypeString()}>";
         }
 
         public override int GetHashCode()
@@ -384,8 +384,8 @@ namespace ContextFreeSession.Design
 
         public override string ToTypeString()
         {
-            string str = string.Join(" ,", Branches.SelectMany(x => new List<string>() { "Labels<" + string.Join(" ,", x.labels) + ">", ((LocalTypeElement)x.cont).ToTypeString() }));
-            return $"Branch<{From}, {str}>";
+            string str = string.Join(" ,", Branches.SelectMany(x => new List<string>() { x.labels.Length > 1 ? "(" + string.Join(" ,", x.labels) + ")" : x.labels[0], ((LocalTypeElement)x.cont).ToTypeString() }));
+            return $"BranchSession<{From}, {str}>";
         }
 
         public override int GetHashCode()
