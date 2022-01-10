@@ -103,15 +103,27 @@ namespace ContextFreeSession
     }
 
     [Serializable]
-    public sealed class ReflexiveMessageException : Exception
+    public class ProjectionException : Exception
     {
-        internal ReflexiveMessageException() : base() { }
+        internal ProjectionException() : base() { }
 
-        internal InvalidGlobalTypeException(string? message) : base(message) { }
+        internal ProjectionException(string? message) : base(message) { }
 
-        internal ReflexiveMessageException(string? message, Exception? inner) : base(message, inner) { }
+        internal ProjectionException(string? message, Exception? inner) : base(message, inner) { }
 
-        private ReflexiveMessageException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+        protected ProjectionException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+    }
+
+    [Serializable]
+    public sealed class LeftRecursionException : ProjectionException
+    {
+        internal LeftRecursionException() : base() { }
+
+        internal LeftRecursionException(string? message) : base(message) { }
+
+        internal LeftRecursionException(string? message, Exception? inner) : base(message, inner) { }
+
+        private LeftRecursionException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     }
 
     [Serializable]

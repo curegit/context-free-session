@@ -9,6 +9,8 @@ namespace ContextFreeSession.Design
     {
         public readonly string Role;
 
+        public string StartSymbol => Rules.ElementAt(0).key;
+
         private AssociationList<string, LocalTypeTerm> Rules { get; init; }
 
         internal LocalType(string role, AssociationList<string, LocalTypeTerm> rules)

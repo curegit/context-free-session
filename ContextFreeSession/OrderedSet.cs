@@ -35,6 +35,11 @@ namespace ContextFreeSession
             return set.Contains(item);
         }
 
+        public bool Disjoint(OrderedSet<T> other)
+        {
+            return !set.Overlaps(other);
+        }
+
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
