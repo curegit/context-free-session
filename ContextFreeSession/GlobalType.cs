@@ -247,9 +247,9 @@ namespace ContextFreeSession.Design
 
         public static Choice Send(string from, string to, params (string label, PayloadType payloadType, GlobalTypeElement[] conts)[] cases) => new(from, to, cases);
 
-        public static (string, PayloadType, GlobalTypeElement[]) Case(string label, params GlobalTypeElement[] conts) => (label, PayloadType.Create<Unit>(), conts);
+        public static (string label, PayloadType payloadType, GlobalTypeElement[] conts) Case(string label, params GlobalTypeElement[] conts) => (label, PayloadType.Create<Unit>(), conts);
 
-        public static (string, PayloadType, GlobalTypeElement[]) Case<T>(string label, params GlobalTypeElement[] conts) => (label, PayloadType.Create<T>(), conts);
+        public static (string label, PayloadType payloadType, GlobalTypeElement[] conts) Case<T>(string label, params GlobalTypeElement[] conts) => (label, PayloadType.Create<T>(), conts);
 
         public static Recursion Do(string nonterminal) => new(nonterminal);
     }
