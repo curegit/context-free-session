@@ -9,6 +9,32 @@ namespace ConsoleTest
     {
         public static void Main(string[] args)
         {
+            Console.WriteLine("# Simple protocol");
+
+            var simple = new GlobalType()
+            {
+                {"Start", Do("Sub"), Send("A", "C", "end") },
+                {"Sub", Send("A", "C", "msg1"), Send("B", "A", "msg2"), Send("B", "A", Case("left", Send("A", "C", "msg3") ), Case("right")) },
+            };
+
+            Console.WriteLine("## Global type");
+            Console.WriteLine(simple);
+
+            Console.WriteLine("## Local type");
+            Console.WriteLine(simple.ToLocal("A"));
+            Console.WriteLine(simple.ToLocal("B"));
+            Console.WriteLine(simple.ToLocal("C"));
+
+            Console.WriteLine("## Local type (determinized)");
+            Console.WriteLine(simple.Project("A"));
+            Console.WriteLine(simple.Project("B"));
+            Console.WriteLine(simple.Project("C"));
+
+            Console.WriteLine("## Code");
+            Console.WriteLine(simple.Generate());
+
+            Console.WriteLine("# Tree protocol");
+
             var tree = new GlobalType()
             {
                 { "Start", Do("Tree"), Send("Sender", "Logger", "end") },
@@ -16,37 +42,21 @@ namespace ConsoleTest
                                                      Case<int>("leaf", Send<int>("Sender", "Logger", "leaf"))) }
             };
 
-            Console.WriteLine("# Global type");
+            Console.WriteLine("## Global type");
             Console.WriteLine(tree);
 
-            
+            Console.WriteLine("## Local type");
+            Console.WriteLine(tree.ToLocal("Sender"));
+            Console.WriteLine(tree.ToLocal("Receiver"));
+            Console.WriteLine(tree.ToLocal("Logger"));
 
-            var sender = tree.ToLocal("Sender");
-            Console.WriteLine(sender);
+            Console.WriteLine("## Local type (determinized)");
+            Console.WriteLine(tree.Project("Sender"));
+            Console.WriteLine(tree.Project("Receiver"));
+            Console.WriteLine(tree.Project("Logger"));
 
-            var receiver = tree.Project("Receiver");
-            Console.WriteLine(receiver);
-
-
-            var logger = tree.ToLocal("Logger");
-            Console.WriteLine(logger);
-
-            var s = tree.Generate();
-            Console.WriteLine(s);
-
-            var a = new GlobalType()
-            {
-                {"Start", Do("Sub"), Send("A", "C", "end") },
-                {"Sub", Send("A", "C", "msg1"), Send("B", "A", "msg2"), Send("B", "A", Case("l", Send("A", "C", "s1") ), Case("r")) },
-            };
-
-
-
-            Console.WriteLine(a.Project("C"));
-
-
-
+            Console.WriteLine("## Code");
+            Console.WriteLine(tree.Generate());
         }
-
     }
 }
