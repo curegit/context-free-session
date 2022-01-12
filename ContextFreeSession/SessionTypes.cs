@@ -7,6 +7,11 @@ namespace ContextFreeSession.Runtime
 
     public interface ILabel { }
 
+    public interface IStart
+    {
+        public string Role { get; }
+    }
+
     public abstract class Session
     {
         internal Session() { }
@@ -14,14 +19,6 @@ namespace ContextFreeSession.Runtime
         internal bool used;
 
         private ICommunicator? communicator;
-
-        public virtual string Role
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-        }
 
         internal ICommunicator Communicator
         {

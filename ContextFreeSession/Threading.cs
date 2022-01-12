@@ -8,7 +8,7 @@ namespace ContextFreeSession.Runtime
 {
     public static class Threading
     {
-        public static S1 Fork<S1, S2>(Action<S2> f) where S1 : Session where S2 : Session
+        public static S1 Fork<S1, S2>(Action<S2> f) where S1 : Session, IStart where S2 : Session, IStart
         {
             if (f is null) throw new ArgumentNullException(nameof(f));
             var client = (S1)Activator.CreateInstance(typeof(S1), true)!;
@@ -22,7 +22,7 @@ namespace ContextFreeSession.Runtime
             return client;
         }
 
-        public static S1 Fork<S1, S2, S3>(Action<S2> f1, Action<S3> f2) where S1 : Session where S2 : Session where S3 : Session
+        public static S1 Fork<S1, S2, S3>(Action<S2> f1, Action<S3> f2) where S1 : Session, IStart where S2 : Session, IStart where S3 : Session, IStart
         {
             if (f1 is null) throw new ArgumentNullException(nameof(f1));
             if (f2 is null) throw new ArgumentNullException(nameof(f2));
@@ -42,7 +42,7 @@ namespace ContextFreeSession.Runtime
             return client;
         }
 
-        public static S1 Fork<S1, S2, S3, S4>(Action<S2> f1, Action<S3> f2, Action<S4> f3) where S1 : Session where S2 : Session where S3 : Session where S4 : Session
+        public static S1 Fork<S1, S2, S3, S4>(Action<S2> f1, Action<S3> f2, Action<S4> f3) where S1 : Session, IStart where S2 : Session, IStart where S3 : Session, IStart where S4 : Session, IStart
         {
             if (f1 is null) throw new ArgumentNullException(nameof(f1));
             if (f2 is null) throw new ArgumentNullException(nameof(f2));
