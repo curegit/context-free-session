@@ -176,7 +176,14 @@ namespace ContextFreeSession.Design
 
         public override string ToString()
         {
-            return ($"{To} ! {Label}<{PayloadType}>;".WithNewLine() + Cont.ToString()).TrimNewLines();
+            if (PayloadType.IsUnitType)
+            {
+                return ($"{To} ! {Label};".WithNewLine() + Cont.ToString()).TrimNewLines();
+            }
+            else
+            {
+                return ($"{To} ! {Label}<{PayloadType}>;".WithNewLine() + Cont.ToString()).TrimNewLines();
+            }
         }
 
         public override string ToTypeString()
@@ -230,7 +237,14 @@ namespace ContextFreeSession.Design
             foreach (var (label, payloadType, cont) in Branches)
             {
                 var str = cont.ToString();
-                accumulator += $" {label}<{payloadType}> {{".WithNewLine() + (str == "" ? "" : str.Indented(4).WithNewLine()) + "}";
+                if (payloadType.IsUnitType)
+                {
+                    accumulator += $" {label} {{".WithNewLine() + (str == "" ? "" : str.Indented(4).WithNewLine()) + "}";
+                }
+                else
+                {
+                    accumulator += $" {label}<{payloadType}> {{".WithNewLine() + (str == "" ? "" : str.Indented(4).WithNewLine()) + "}";
+                }
             }
             return accumulator;
         }
@@ -320,7 +334,14 @@ namespace ContextFreeSession.Design
 
         public override string ToString()
         {
-            return ($"{From} ? {Label}<{PayloadType}>;".WithNewLine() + Cont.ToString()).TrimNewLines();
+            if (PayloadType.IsUnitType)
+            {
+                return ($"{From} ? {Label};".WithNewLine() + Cont.ToString()).TrimNewLines();
+            }
+            else
+            {
+                return ($"{From} ? {Label}<{PayloadType}>;".WithNewLine() + Cont.ToString()).TrimNewLines();
+            }
         }
 
         public override string ToTypeString()
