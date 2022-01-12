@@ -6,6 +6,8 @@ namespace ContextFreeSession
     [Serializable]
     public struct Unit : IEquatable<Unit>, IComparable, IComparable<Unit>
     {
+        public static readonly Unit unit;
+
         public override bool Equals([NotNullWhen(true)] object? obj)
         {
             return obj is Unit;
