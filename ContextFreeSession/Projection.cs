@@ -91,6 +91,8 @@ namespace ContextFreeSession.Design
 
     public partial class LocalType
     {
+        private bool eliminated = false;
+
         public void EliminateLeftRecursion()
         {
             // この左再帰除去アルゴリズムは文法に循環と空規則がないなら必ず成功する
@@ -143,10 +145,15 @@ namespace ContextFreeSession.Design
                     Rules[n] = body;
                 }
             }
+            eliminated = true;
         }
 
         public void Determinize()
         {
+            if (!eliminated)
+            {
+                EliminateLeftRecursion();
+            }
             SolveStar();
             SolveMerge();
         }
