@@ -69,10 +69,17 @@ namespace ContextFreeSession.Design
                 var result = new List<string>();
                 foreach (var (nonterminal, body) in rules)
                 {
-                    result.AddRange(body.Where(x => x is Transfer).Cast<Transfer>().SelectMany(x => new string[] { x.From, x.To }));
-                    result.AddRange(body.Where(x => x is Choice).Cast<Choice>().SelectMany(x => new string[] { x.From, x.To }));
+                    result.AddRange(Collect(body));
                 }
                 return result.Distinct();
+
+                static IEnumerable<string> Collect(IEnumerable<GlobalTypeElement> ts)
+                {
+                    var result = new List<string>();
+                    result.AddRange(ts.Where(x => x is Transfer).Cast<Transfer>().SelectMany(x => new string[] { x.From, x.To }));
+                    result.AddRange(ts.Where(x => x is Choice).Cast<Choice>().SelectMany(x => (new string[] { x.From, x.To }).Concat(x.SelectMany(y => Collect(y.conts)))));
+                    return result;
+                }
             }
         }
 
@@ -83,10 +90,17 @@ namespace ContextFreeSession.Design
                 var result = new List<string>();
                 foreach (var (nonterminal, body) in rules)
                 {
-                    result.AddRange(body.Where(x => x is Transfer).Cast<Transfer>().Select(x => x.Label));
-                    result.AddRange(body.Where(x => x is Choice).Cast<Choice>().SelectMany(x => x.Select(y => y.label)));
+                    result.AddRange(Collect(body));
                 }
                 return result.Distinct();
+
+                static IEnumerable<string> Collect(IEnumerable<GlobalTypeElement> ts)
+                {
+                    var result = new List<string>();
+                    result.AddRange(ts.Where(x => x is Transfer).Cast<Transfer>().Select(x => x.Label));
+                    result.AddRange(ts.Where(x => x is Choice).Cast<Choice>().SelectMany(x => x.Select(y => y.label).Concat(x.SelectMany(y => Collect(y.conts)))));
+                    return result;
+                }
             }
         }
     }
