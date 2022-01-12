@@ -33,7 +33,7 @@ namespace ContextFreeSession.Design
             var rules = new AssociationList<string, LocalTypeTerm>();
             foreach (var (nonterminal, body) in globalType)
             {
-                var newNonterminal = role + nonterminal;
+                var newNonterminal = MapNonterminal(nonterminal, role);
                 rules.Add(newNonterminal, MapRuleToLocal(role, body));
             }
             return rules;
@@ -72,7 +72,7 @@ namespace ContextFreeSession.Design
                             return new Merge(c.Select(x => MapRuleToLocal(role, x.conts.Concat(body.Skip(1)))));
                         }
                     case Recursion r:
-                        return new Call(role + r.Nonterminal, MapRuleToLocal(role, body.Skip(1)));
+                        return new Call(MapNonterminal(r.Nonterminal, role), MapRuleToLocal(role, body.Skip(1)));
                     default:
                         throw new NotImplementedException();
                 }
@@ -81,6 +81,11 @@ namespace ContextFreeSession.Design
             {
                 return new Epsilon();
             }
+        }
+
+        private static string MapNonterminal(string nonterminal, string role)
+        {
+            return role + "_" + nonterminal;
         }
     }
 

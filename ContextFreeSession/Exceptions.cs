@@ -42,7 +42,7 @@ namespace ContextFreeSession
 
             public static bool IsValidNonterminalSymbol(string symbol)
             {
-                return symbol.Length > 0 && symbol[0].IsLatin() && symbol.IsAlphanumeric('_');
+                return symbol.Length > 0 && symbol[0].IsLatin() && symbol.IsAlphanumeric();
             }
         }
 
