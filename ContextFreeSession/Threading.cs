@@ -140,8 +140,15 @@ namespace ContextFreeSession.Runtime
 
         public string Branch(string from)
         {
-            lookaheadLabel = (string)Task.Run(async () => await readers[from].ReadAsync()).Result;
-            return lookaheadLabel;
+            if (lookaheadLabel is null)
+            {
+                lookaheadLabel = (string)Task.Run(async () => await readers[from].ReadAsync()).Result;
+                return lookaheadLabel;
+            }
+            else
+            {
+                return lookaheadLabel;
+            }
         }
 
         public void Close()
