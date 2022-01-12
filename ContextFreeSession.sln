@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleTest", "ConsoleTest\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodegenTest", "CodegenTest\CodegenTest.csproj", "{F64D3E0C-0FFC-47E6-AF44-9570EC058153}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TreeExample", "TreeExample\TreeExample.csproj", "{3FBC8CE4-DBAA-4496-AB0C-44DA711A2422}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TreeExample", "TreeExample\TreeExample.csproj", "{3FBC8CE4-DBAA-4496-AB0C-44DA711A2422}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrickyExample", "TrickyExample\TrickyExample.csproj", "{5A3C617F-0FCE-4919-BE87-570FCEB5D306}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{3FBC8CE4-DBAA-4496-AB0C-44DA711A2422}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3FBC8CE4-DBAA-4496-AB0C-44DA711A2422}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3FBC8CE4-DBAA-4496-AB0C-44DA711A2422}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A3C617F-0FCE-4919-BE87-570FCEB5D306}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A3C617F-0FCE-4919-BE87-570FCEB5D306}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A3C617F-0FCE-4919-BE87-570FCEB5D306}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A3C617F-0FCE-4919-BE87-570FCEB5D306}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

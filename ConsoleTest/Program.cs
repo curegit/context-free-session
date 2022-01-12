@@ -13,8 +13,8 @@ namespace ConsoleTest
 
             var simple = new GlobalType()
             {
-                {"Start", Do("Sub"), Send("A", "C", "end") },
-                {"Sub", Send("A", "C", "msg1"), Send("B", "A", "msg2"), Send("B", "A", Case("left", Send("A", "C", "msg3") ), Case("right")) },
+                { "Start", Do("Sub"), Send("A", "C", "end") },
+                { "Sub", Send("A", "C", "msg1"), Send("B", "A", "msg2"), Send("B", "A", Case("left", Send("A", "C", "msg3") ), Case("right")) },
             };
 
             Console.WriteLine("## Global type");
@@ -39,7 +39,7 @@ namespace ConsoleTest
             {
                 { "Start", Do("Tree"), Send("Sender", "Logger", "end") },
                 { "Tree", Send("Sender", "Receiver", Case("node", Do("Tree"), Do("Tree")),
-                                                     Case<int>("leaf", Send<int>("Sender", "Logger", "leaf"))) }
+                                                     Case<int>("leaf", Send<int>("Sender", "Logger", "leaf"))) },
             };
 
             Console.WriteLine("## Global type");
@@ -48,7 +48,12 @@ namespace ConsoleTest
             Console.WriteLine("## Local type");
             Console.WriteLine(tree.ToLocal("Sender"));
             Console.WriteLine(tree.ToLocal("Receiver"));
-            Console.WriteLine(tree.ToLocal("Logger"));
+            var logger = tree.ToLocal("Logger");
+            Console.WriteLine(logger);
+
+            Console.WriteLine("### Left recursion elimination example");
+            logger.EliminateLeftRecursion();
+            Console.WriteLine(logger);
 
             Console.WriteLine("## Local type (determinized)");
             Console.WriteLine(tree.Project("Sender"));
@@ -57,6 +62,56 @@ namespace ConsoleTest
 
             Console.WriteLine("## Code");
             Console.WriteLine(tree.Generate());
+
+            Console.WriteLine("# Merge sending example");
+
+            var send = new GlobalType()
+            {
+                { "Start", Send("A", "B", Case("msg1", Send("C", "A", "const"), Send("A", "C", "msg1")),
+                                          Case("msg2", Send("C", "A", "const"), Send("A", "C", "msg2"))), Send("C", "A", "bye") },
+            };
+
+            Console.WriteLine("## Global type");
+            Console.WriteLine(send);
+
+            Console.WriteLine("## Local type");
+            Console.WriteLine(send.ToLocal("A"));
+            Console.WriteLine(send.ToLocal("B"));
+            Console.WriteLine(send.ToLocal("C"));
+
+            Console.WriteLine("## Local type (determinized)");
+            Console.WriteLine(send.Project("A"));
+            Console.WriteLine(send.Project("B"));
+            Console.WriteLine(send.Project("C"));
+
+            Console.WriteLine("# Tricky example");
+
+            var multiple = new GlobalType()
+            {
+                { "Start", Send("A", "B", Case("msg1", Do("Sub1"), Send("A", "C", "late")),
+                                          Case("msg2", Do("Sub1"), Send("A", "C", "combo"))) },
+                { "Sub1", Send("B", "A", Case("sub1", Send("A", "C", "tricky")),
+                                         Case("sub2", Do("Sub2")),
+                                         Case("sub3")) },
+                { "Sub2", Send("A", "C", Case<string>("super"),
+                                         Case<string>("uber")) },
+            };
+
+            Console.WriteLine("## Global type");
+            Console.WriteLine(multiple);
+
+            Console.WriteLine("## Local type");
+            Console.WriteLine(multiple.ToLocal("A"));
+            Console.WriteLine(multiple.ToLocal("B"));
+            Console.WriteLine(multiple.ToLocal("C"));
+
+            Console.WriteLine("## Local type (determinized)");
+            Console.WriteLine(multiple.Project("A"));
+            Console.WriteLine(multiple.Project("B"));
+            Console.WriteLine(multiple.Project("C"));
+
+            Console.WriteLine("## Code");
+            Console.WriteLine(multiple.Generate());
         }
     }
 }
