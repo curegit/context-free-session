@@ -34,8 +34,9 @@ namespace ContextFreeSession.Design
             var accumlator = "";
             foreach (var (nonterminal, body) in Rules)
             {
+                var str = body.ToString();
                 accumlator += (nonterminal + " {").WithNewLine();
-                accumlator += body.ToString().Indented(4).WithNewLine();
+                accumlator += str == "" ? "" : str.Indented(4).WithNewLine();
                 accumlator += "}".WithNewLine();
             }
             return accumlator.TrimNewLines();
@@ -94,9 +95,9 @@ namespace ContextFreeSession.Design
         public override string ToString()
         {
             var accumulator = "⊔";
-            foreach (var b in Branches)
+            foreach (var (i, s) in Branches.Select((x, i) => (i, x.ToString())))
             {
-                accumulator += " | {".WithNewLine() + b.ToString().TrimNewLines().Indented(4).WithNewLine() + "}";
+                accumulator += (i == 0 ? "" : " |") + " {".WithNewLine() + (s == "" ? "" : s.Indented(4).WithNewLine()) + "}";
             }
             return accumulator;
         }
@@ -118,7 +119,7 @@ namespace ContextFreeSession.Design
 
         public override string ToString()
         {
-            return $"({Term})*;".WithNewLine();
+            return $"({Term})*;";
         }
     }
 
@@ -228,15 +229,15 @@ namespace ContextFreeSession.Design
             var accumulator = $"{To} !";
             foreach (var (label, payloadType, cont) in Branches)
             {
-                var str = cont.ToString().Indented(4).WithNewLine();
-                accumulator += $" {label}<{payloadType}> {{".WithNewLine() + str + "}";
+                var str = cont.ToString();
+                accumulator += $" {label}<{payloadType}> {{".WithNewLine() + (str == "" ? "" : str.Indented(4).WithNewLine()) + "}";
             }
             return accumulator;
         }
 
         public override string ToTypeString()
         {
-            string str = string.Join(" ,", Branches.SelectMany(x => new List<string>() { x.label, x.payloadType.FullName, ((LocalTypeElement)x.cont).ToTypeString() }));
+            string str = string.Join(", ", Branches.SelectMany(x => new List<string>() { x.label, x.payloadType.FullName, ((LocalTypeElement)x.cont).ToTypeString() }));
             return $"SendSession<{To}, {str}>";
         }
 
@@ -319,7 +320,7 @@ namespace ContextFreeSession.Design
 
         public override string ToString()
         {
-            return $"{From} ? {Label}<{PayloadType}>;".WithNewLine() + Cont.ToString();
+            return ($"{From} ? {Label}<{PayloadType}>;".WithNewLine() + Cont.ToString()).TrimNewLines();
         }
 
         public override string ToTypeString()
@@ -372,19 +373,19 @@ namespace ContextFreeSession.Design
 
         public override string ToString()
         {
-            var str = $"{From} ??";
+            var accumulator = $"{From} ¿";
             foreach (var (label, cont) in Branches)
             {
-                var labelstr = string.Join(",", label);
-                var cstr = cont.ToString().Indented(4).WithNewLine();
-                str += $" {labelstr} {{".WithNewLine() + cstr + "}";
+                var labelstr = string.Join(", ", label);
+                var str = cont.ToString();
+                accumulator += $" {labelstr} {{".WithNewLine() + (str == "" ? "" : str.Indented(4).WithNewLine()) + "}";
             }
-            return str;
+            return accumulator;
         }
 
         public override string ToTypeString()
         {
-            string str = string.Join(" ,", Branches.SelectMany(x => new List<string>() { x.labels.Length > 1 ? "(" + string.Join(" ,", x.labels) + ")" : x.labels[0], ((LocalTypeElement)x.cont).ToTypeString() }));
+            string str = string.Join(", ", Branches.SelectMany(x => new List<string>() { x.labels.Length > 1 ? "(" + string.Join(", ", x.labels) + ")" : x.labels[0], ((LocalTypeElement)x.cont).ToTypeString() }));
             return $"BranchSession<{From}, {str}>";
         }
 
@@ -432,7 +433,7 @@ namespace ContextFreeSession.Design
 
         public override string ToString()
         {
-            return $"{Nonterminal}();".WithNewLine() + Cont.ToString();
+            return ($"{Nonterminal}();".WithNewLine() + Cont.ToString()).TrimNewLines();
         }
 
         public override string ToTypeString()
