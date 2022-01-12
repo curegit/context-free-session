@@ -8,23 +8,50 @@ namespace ContextFreeSession.Design
     {
         public LocalType ToLocal(string role)
         {
-            Validate();
+            if (role is null) throw new ArgumentNullException(nameof(role));
+            Validate(role);
             return new LocalType(role, MapToLocal(role, this));
         }
 
         public LocalType Project(string role)
         {
+            if (role is null) throw new ArgumentNullException(nameof(role));
             var local = ToLocal(role);
             local.EliminateLeftRecursion();
             local.Determinize();
             return local;
         }
 
-        private void Validate()
+        private void Validate(string role)
         {
             if (rules.Count == 0)
             {
                 throw new InvalidGlobalTypeException("Rule set is empty.");
+            }
+            if (!Roles.Contains(role))
+            {
+                throw new ProjectionException($"Role '{role}' is not in this global type.");
+            }
+            foreach (var call in this.SelectMany(x => CollectCalls(x.body)).Distinct())
+            {
+                if (!this.Select(x => x.nonterminal).Contains(call)) throw new InvalidGlobalTypeException($"Calling undefined nonterminal '{call}'.");
+            }
+            foreach (var label in Labels)
+            {
+                if (Roles.Any(x => x == label)) throw new InvalidGlobalTypeException($"Label '{label}' conflicts with a role name.");
+                if (this.Any(x => x.nonterminal == label)) throw new InvalidGlobalTypeException($"Label '{label}' conflicts with a nonterminal.");
+            }
+            foreach (var r in Roles)
+            {
+                if (this.Any(x => x.nonterminal == r)) throw new InvalidGlobalTypeException($"Role '{r}' conflicts with a nonterminal.");
+            }
+
+            static IEnumerable<string> CollectCalls(IEnumerable<GlobalTypeElement> ts)
+            {
+                var result = new List<string>();
+                result.AddRange(ts.Where(x => x is Recursion).Cast<Recursion>().Select(x => x.Nonterminal));
+                result.AddRange(ts.Where(x => x is Choice).Cast<Choice>().SelectMany(x => x.SelectMany(y => CollectCalls(y.conts))));
+                return result;
             }
         }
 
