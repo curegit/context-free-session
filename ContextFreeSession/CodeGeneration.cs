@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace ContextFreeSession.Design
 {
@@ -10,26 +8,34 @@ namespace ContextFreeSession.Design
     {
         public string Generate(NewLineMode newLine = NewLineMode.Environment)
         {
-            var res = "";
-
+            var result = "";
             var locals = Roles.Select(Project);
-
-            foreach (var r in Roles)
+            foreach (var role in Roles)
             {
-                res += $"public struct {r} : IRole {{ }}";
+                result += $"public struct {role} : IRole {{ }}".WithNewLine().WithNewLine();
             }
-
             foreach (var label in Labels)
             {
-                res += $"public struct {label} : ILabel {{ public string ToLabelString() {{ return \"{label}\"; }} }}".WithNewLine();
+                result += $"public struct {label} : ILabel {{ }}".WithNewLine().WithNewLine();
             }
-
             foreach (var local in locals)
             {
-                res += local.Generate();
+                result += local.Generate().WithNewLine();
             }
-
-            return res;
+            result = result.TrimNewLines().WithNewLine();
+            switch (newLine)
+            {
+                case NewLineMode.Environment:
+                    result = Regex.Replace(result, @"\r\n?|\n", Environment.NewLine);
+                    break;
+                case NewLineMode.LF:
+                    result = Regex.Replace(result, @"\r\n?|\n", "\n");
+                    break;
+                case NewLineMode.CRLF:
+                    result = Regex.Replace(result, @"\r\n?|\n", "\r\n");
+                    break;
+            }
+            return result;
         }
     }
 
@@ -37,17 +43,13 @@ namespace ContextFreeSession.Design
     {
         public string Generate()
         {
-            var res = "";
-            foreach (var (key, value) in Rules)
+            var result = "";
+            foreach (var (nonterminal, body) in Rules)
             {
-                var S = key;
-                var t = (LocalTypeElement)value;
-                var className = S;
-                //var s = $"public class {className} : {t.ToTypeString()} {{ public {className}() : base({t.ToExp()}) {{ }} }}";
-                var s = $"public class {className} : {t.ToTypeString()} {{ }}";
-                res += s.WithNewLine();
+                var str = $"public class {nonterminal} : {((LocalTypeElement)body).ToTypeString()}, IStart {{ public string Role => \"{Role}\"; }}";
+                result += str.WithNewLine().WithNewLine();
             }
-            return res;
+            return result.TrimNewLines().WithNewLine();
         }
     }
 
