@@ -123,7 +123,7 @@ namespace ContextFreeSession.Runtime
             Task.Run(async () => await writers[to].WriteAsync(value!)).Wait();
         }
 
-        public (string, T) Receive<T>(string from, string label)
+        public (string label, T value) Receive<T>(string from, string label)
         {
             if (lookaheadLabel is null)
             {

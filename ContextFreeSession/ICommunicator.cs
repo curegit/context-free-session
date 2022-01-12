@@ -4,7 +4,7 @@ namespace ContextFreeSession.Runtime
     {
         public void Send<T>(string to, string label, T value);
 
-        public (string, T) Receive<T>(string from, string label);
+        public (string label, T value) Receive<T>(string from, string label);
 
         public string Branch(string from);
 
