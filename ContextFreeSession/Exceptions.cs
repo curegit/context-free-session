@@ -111,6 +111,8 @@ namespace ContextFreeSession
 
             internal ProjectionException(string? message) : base(message) { }
 
+            internal ProjectionException(string message, LocalType lastState) : base(message.WithNewLine() + "Last state:".WithNewLine() + lastState.ToString().Indented(2)) { }
+
             internal ProjectionException(string? message, Exception? inner) : base(message, inner) { }
 
             protected ProjectionException(SerializationInfo info, StreamingContext context) : base(info, context) { }
@@ -122,6 +124,8 @@ namespace ContextFreeSession
             internal LeftRecursionException() : base() { }
 
             internal LeftRecursionException(string? message) : base(message) { }
+
+            internal LeftRecursionException(string message, LocalType lastState) : base(message.WithNewLine() + "Last state:".WithNewLine() + lastState.ToString().Indented(2)) { }
 
             internal LeftRecursionException(string? message, Exception? inner) : base(message, inner) { }
 
