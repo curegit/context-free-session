@@ -25,11 +25,11 @@ public class Program
 
         Eps LoggerTreeDeleg(Logger_Tree t)
         {
-            var s = t.Receive<Sender, leaf>(out var integer).Do(LoggerTreeDeleg2);
+            var s = t.Receive<Sender, leaf>(out var integer);
 
             Console.WriteLine(integer);
 
-            return s;
+            return s.Do(LoggerTreeDeleg2);
         }
 
         Eps LoggerTreeDeleg2(Logger_Tree_ t)
@@ -39,21 +39,53 @@ public class Program
     }
 );
 
-        object tree = (1, (((2, 3), 4), (5, 6)));
+
+        var tree = new Node(new Leaf(1), new Node(new Leaf(2), new Leaf(3)));
 
         sender.Do(SendTree, tree).Send<Logger, end>(unit).Close();
 
-        Eps SendTree(Sender_Tree ch, object tree)
+        Eps SendTree(Sender_Tree ch, IntTree tree)
         {
-            if (tree is int n)
+            if (tree is Leaf leaf)
             {
+                var n = leaf.Value;
                 return ch.Send<Receiver, leaf>(n).Send<Logger, leaf>(n);
             }
             else
             {
-                var (left, right) = ((object, object))tree;
+                var (left, right) = ((Node)tree).Children;
                 return ch.Send<Receiver, node>(unit).Do(SendTree, left).Do(SendTree, right);
             }
         }
+    }
+}
+
+public class IntTree
+{
+
+}
+
+public class Node : IntTree
+{
+    public IntTree Left { get; init; }
+
+    public IntTree Right { get; init; }
+
+    public (IntTree, IntTree) Children => (Left, Right);
+
+    public Node(IntTree left, IntTree right)
+    {
+        Left = left;
+        Right = right;
+    }
+}
+
+public class Leaf : IntTree
+{
+    public int Value { get; init; }
+
+    public Leaf(int value)
+    {
+        Value = value;
     }
 }

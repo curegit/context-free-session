@@ -61,7 +61,7 @@ public class Program
         static Eps ASub1(A_Sub1 sub1)
         {
             return sub1.Branch<B, sub1, sub2, sub3>(
-                b1 => b1.Receive<B, sub1>(out var _).Send<C, tricky>(new Unit()),
+                b1 => b1.Receive<B, sub1>(out var _).Send<C, tricky>(unit),
                 b2 => b2.Receive<B, sub2>(out var _).Do(ASub2),
                 b3 => b3.Receive<B, sub3>(out var _)
            );
