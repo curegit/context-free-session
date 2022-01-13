@@ -20,10 +20,10 @@ public class Program
                             return sub.Send<A, sub1>(unit);
                         case 1:
                             Console.WriteLine("B sent sub2.");
-                            return sub.Send<A, sub2>(new Unit()).Do(s => s);
+                            return sub.Send<A, sub2>(unit).Do(s => s);
                         default:
                             Console.WriteLine("B sent sub3.");
-                            return sub.Send<A, sub3>(new Unit());
+                            return sub.Send<A, sub3>(unit);
                     }
                 }
             },
@@ -50,7 +50,7 @@ public class Program
         switch (Random.Shared.Next(2))
         {
             case 0:
-                a.Send<B, msg1>(new Unit()).Do(ASub1).Send<C, late>(unit).Close();
+                a.Send<B, msg1>(unit).Do(ASub1).Send<C, late>(unit).Close();
                 break;
             case 1:
                 a.Send<B, msg2>(unit).Do(ASub1).Send<C, combo>(unit).Close();
