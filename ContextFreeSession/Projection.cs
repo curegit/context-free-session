@@ -151,7 +151,7 @@ namespace ContextFreeSession.Design
                 if (t is Call call && call.Nonterminal == n)
                 {
                     // ガードされていない選択肢しかないので失敗
-                    throw new LeftRecursionException();
+                    throw new LeftRecursionException("Calling is not guarded.");
                 }
                 else if (t is Merge m)
                 {
@@ -166,7 +166,7 @@ namespace ContextFreeSession.Design
                     if (!betas.Any())
                     {
                         // ガードされていない選択肢しかないので失敗
-                        throw new LeftRecursionException();
+                        throw new LeftRecursionException("Can't eliminate left recursion 'cause there's no guarded choices.");
                     }
                     var head = new Merge(betas).Simplify();
                     var term = new Merge(alphas).Simplify();
@@ -291,13 +291,13 @@ namespace ContextFreeSession.Design
                 var repeat = FirstSet(star.Term);
                 var follow = FollowSet(context);
                 // 送信等を含むのでマージ不可
-                if (repeat is null || follow is null) throw new ProjectionException();
+                if (repeat is null || follow is null) throw new ProjectionException("Can't merge with sending state.");
                 // ループが空の場合
                 if (repeat.IsEmpty) return new Epsilon();
                 // Follow に終了を含む場合
-                if (follow.Nullable) throw new ProjectionException();
+                if (follow.Nullable) throw new ProjectionException("Can't merge with end state.");
                 // ラベルが互いに素でないなら失敗
-                if (!repeat.Disjoint(follow)) throw new ProjectionException();
+                if (!repeat.Disjoint(follow)) throw new ProjectionException("Labels are not disjoint.");
                 // マージ可能
                 var newSym = context;
                 while (Rules.ContainsKey(newSym))
@@ -398,17 +398,17 @@ namespace ContextFreeSession.Design
                 // 終了と受信のマージ
                 if (nullable)
                 {
-                    throw new ProjectionException();
+                    throw new ProjectionException("Can't merge with end state.");
                 }
                 // 異なるロールからの受信
                 if (from.Count != 1)
                 {
-                    throw new ProjectionException();
+                    throw new ProjectionException("Can't merge receiving states from different roles.");
                 }
                 // ペイロードの型の一致を確認
                 if (recvs.GroupBy(x => (x.Label, x.PayloadType)).Count() != recvs.GroupBy(x => x.Label).Count())
                 {
-                    throw new ProjectionException();
+                    throw new ProjectionException("Payload doesn't match.");
                 }
                 // ラベル集合が素集合であるか確認
                 var recvLabelSet = new OrderedSet<string>(recvs.Select(x => x.Label));
@@ -424,7 +424,7 @@ namespace ContextFreeSession.Design
                     {
                         if (!mustDisjoint[i].Disjoint(mustDisjoint[j]))
                         {
-                            throw new ProjectionException();
+                            throw new ProjectionException("Labels are not disjoint.");
                         }
                     }
                 }
@@ -496,7 +496,7 @@ namespace ContextFreeSession.Design
                             break;
                         case Call call:
                             var res1 = DirectorSet(call, context);
-                            if (res1 is null) throw new ProjectionException();
+                            if (res1 is null) throw new ProjectionException("Can't merge with sending state.");
                             if (res1.Nullable) nullable = true;
                             if (res1.IsEmpty) return;
                             from.Add(res1.From!);
@@ -505,14 +505,14 @@ namespace ContextFreeSession.Design
                             break;
                         case Epsilon epsilon:
                             var res2 = DirectorSet(epsilon, context);
-                            if (res2 is null) throw new ProjectionException();
+                            if (res2 is null) throw new ProjectionException("Can't merge with sending state.");
                             if (res2.Nullable) nullable = true;
                             if (res2.IsEmpty) return;
                             from.Add(res2.From!);
                             epsLabels.AddRange(res2.Labels);
                             break;
                         default:
-                            throw new ProjectionException();
+                            throw new ProjectionException("Can't merge with sending state.");
                     }
                 }
             }
