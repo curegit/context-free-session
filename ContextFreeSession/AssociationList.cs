@@ -30,6 +30,19 @@ namespace ContextFreeSession
             }
         }
 
+        public bool Remove(TKey key)
+        {
+            if (dictionary.Remove(key))
+            {
+                keys.Remove(key);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public bool ContainsKey(TKey key)
         {
             return dictionary.ContainsKey(key);

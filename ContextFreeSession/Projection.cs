@@ -19,6 +19,7 @@ namespace ContextFreeSession.Design
             var local = ToLocal(role);
             local.EliminateLeftRecursion();
             local.Determinize();
+            local.Simplify();
             return local;
         }
 
@@ -120,6 +121,8 @@ namespace ContextFreeSession.Design
     {
         private bool eliminated = false;
 
+        private bool determinized = false;
+
         public void EliminateLeftRecursion()
         {
             // この左再帰除去アルゴリズムは文法に循環と空規則がないなら必ず成功する
@@ -183,10 +186,63 @@ namespace ContextFreeSession.Design
             }
             SolveStar();
             SolveMerge();
+            determinized = true;
+        }
+
+        public void Simplify()
+        {
+            if (!determinized)
+            {
+                throw new InvalidOperationException();
+            }
+            foreach (var (nonterminal, body) in Rules.ToArray())
+            {
+                if (body is Epsilon)
+                {
+                    SimplifySub(nonterminal);
+                    Simplify();
+                    break;
+                }
+            }
+
+            void SimplifySub(string emptyNonterminal)
+            {
+                Rules.Remove(emptyNonterminal);
+                foreach (var (nonterminal, body) in Rules.ToArray())
+                {
+                    Rules[nonterminal] = SimplifyTerm(body, emptyNonterminal);
+                }
+            }
+
+            LocalTypeTerm SimplifyTerm(LocalTypeTerm t, string emptyNonterminal)
+            {
+                switch (t)
+                {
+                    case Send send:
+                        return new Send(send.To, send.Label, send.PayloadType, SimplifyTerm(send.Cont, emptyNonterminal));
+                    case Select select:
+                        var bs = select.Branches.Select(x => (x.label, x.payloadType, SimplifyTerm(x.cont, emptyNonterminal)));
+                        return new Select(select.To, bs);
+                    case Receive receive:
+                        return new Receive(receive.From, receive.Label, receive.PayloadType, SimplifyTerm(receive.Cont, emptyNonterminal));
+                    case Branch branch:
+                        var brs = branch.Branches.Select(x => (x.labels, SimplifyTerm(x.cont, emptyNonterminal)));
+                        return new Branch(branch.From, brs);
+                    case Merge merge:
+                        return new Merge(merge.Branches.Select(x => SimplifyTerm(x, emptyNonterminal)));
+                    case Star star:
+                        throw new NotImplementedException();
+                    case Call call:
+                        if (call.Nonterminal == emptyNonterminal) return SimplifyTerm(call.Cont, emptyNonterminal);
+                        return new Call(call.Nonterminal, SimplifyTerm(call.Cont, emptyNonterminal));
+                    default:
+                        return t;
+                }
+            }
         }
 
         // クリーネ閉包がなくなるまでマージする
-        public void SolveStar()
+        private void SolveStar()
         {
             var changed = false;
             foreach (var (nonterminal, body) in Rules.ToArray())
@@ -257,7 +313,7 @@ namespace ContextFreeSession.Design
         }
 
         // マージ演算子がなくなるまでマージする
-        public void SolveMerge()
+        private void SolveMerge()
         {
             var changed = false;
             foreach (var (nonterminal, body) in Rules.ToArray())
