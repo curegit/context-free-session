@@ -228,6 +228,51 @@ namespace ContextFreeSession.Runtime
             session.Communicator = eps.Communicator;
             return session;
         }
+
+        public C Do<T>(Func<S, T, Eps> deleg, T args)
+        {
+            if (deleg is null) throw new ArgumentNullException(nameof(deleg));
+            if (used) throw new LinearityViolationException();
+            used = true;
+            var inner = (S)Activator.CreateInstance(typeof(S), true)!;
+            inner.Communicator = Communicator;
+            var eps = deleg(inner, args);
+            if (eps.used) throw new LinearityViolationException();
+            eps.used = true;
+            var session = (C)Activator.CreateInstance(typeof(C), true)!;
+            session.Communicator = eps.Communicator;
+            return session;
+        }
+
+        public (C, TResult) DoFunc<TResult>(Func<S, (Eps, TResult)> deleg)
+        {
+            if (deleg is null) throw new ArgumentNullException(nameof(deleg));
+            if (used) throw new LinearityViolationException();
+            used = true;
+            var inner = (S)Activator.CreateInstance(typeof(S), true)!;
+            inner.Communicator = Communicator;
+            var (eps, result) = deleg(inner);
+            if (eps.used) throw new LinearityViolationException();
+            eps.used = true;
+            var session = (C)Activator.CreateInstance(typeof(C), true)!;
+            session.Communicator = eps.Communicator;
+            return (session, result);
+        }
+
+        public (C, TResult) DoFunc<T, TResult>(Func<S, T, (Eps, TResult)> deleg, T args)
+        {
+            if (deleg is null) throw new ArgumentNullException(nameof(deleg));
+            if (used) throw new LinearityViolationException();
+            used = true;
+            var inner = (S)Activator.CreateInstance(typeof(S), true)!;
+            inner.Communicator = Communicator;
+            var (eps, result) = deleg(inner, args);
+            if (eps.used) throw new LinearityViolationException();
+            eps.used = true;
+            var session = (C)Activator.CreateInstance(typeof(C), true)!;
+            session.Communicator = eps.Communicator;
+            return (session, result);
+        }
     }
 
     public class Eps : Session
