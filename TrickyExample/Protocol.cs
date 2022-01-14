@@ -34,9 +34,7 @@ public class A_Sub2 : SendSession<C, super, string, Eps, uber, string, Eps>, ISt
 
 public class B_Start : BranchSession<A, msg1, ReceiveSession<A, msg1, ContextFreeSession.Unit, Call<B_Sub1, Eps>>, msg2, ReceiveSession<A, msg2, ContextFreeSession.Unit, Call<B_Sub1, Eps>>>, IStart { public string Role => "B"; }
 
-public class B_Sub1 : SendSession<A, sub1, ContextFreeSession.Unit, Eps, sub2, ContextFreeSession.Unit, Call<B_Sub2, Eps>, sub3, ContextFreeSession.Unit, Eps>, IStart { public string Role => "B"; }
-
-public class B_Sub2 : Eps, IStart { public string Role => "B"; }
+public class B_Sub1 : SendSession<A, sub1, ContextFreeSession.Unit, Eps, sub2, ContextFreeSession.Unit, Eps, sub3, ContextFreeSession.Unit, Eps>, IStart { public string Role => "B"; }
 
 public class C_Start : Call<C_Sub1, BranchSession<A, late, ReceiveSession<A, late, ContextFreeSession.Unit, Eps>, combo, ReceiveSession<A, combo, ContextFreeSession.Unit, Eps>>>, IStart { public string Role => "C"; }
 
