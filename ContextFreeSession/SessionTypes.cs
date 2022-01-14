@@ -275,6 +275,7 @@ namespace ContextFreeSession.Runtime
             var inner = (S)Activator.CreateInstance(typeof(S), true)!;
             inner.Communicator = Communicator;
             var eps = deleg(inner);
+            if (eps.Communicator != Communicator) throw new ResumptionException();
             if (eps.used) throw new LinearityViolationException();
             eps.used = true;
             var session = (C)Activator.CreateInstance(typeof(C), true)!;
@@ -290,6 +291,7 @@ namespace ContextFreeSession.Runtime
             var inner = (S)Activator.CreateInstance(typeof(S), true)!;
             inner.Communicator = Communicator;
             var eps = deleg(inner, args);
+            if (eps.Communicator != Communicator) throw new ResumptionException();
             if (eps.used) throw new LinearityViolationException();
             eps.used = true;
             var session = (C)Activator.CreateInstance(typeof(C), true)!;
@@ -305,6 +307,7 @@ namespace ContextFreeSession.Runtime
             var inner = (S)Activator.CreateInstance(typeof(S), true)!;
             inner.Communicator = Communicator;
             var (eps, result) = deleg(inner);
+            if (eps.Communicator != Communicator) throw new ResumptionException();
             if (eps.used) throw new LinearityViolationException();
             eps.used = true;
             var session = (C)Activator.CreateInstance(typeof(C), true)!;
@@ -320,6 +323,7 @@ namespace ContextFreeSession.Runtime
             var inner = (S)Activator.CreateInstance(typeof(S), true)!;
             inner.Communicator = Communicator;
             var (eps, result) = deleg(inner, args);
+            if (eps.Communicator != Communicator) throw new ResumptionException();
             if (eps.used) throw new LinearityViolationException();
             eps.used = true;
             var session = (C)Activator.CreateInstance(typeof(C), true)!;

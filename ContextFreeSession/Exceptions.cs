@@ -158,5 +158,17 @@ namespace ContextFreeSession
 
             private UnexpectedLabelException(SerializationInfo info, StreamingContext context) : base(info, context) { }
         }
+
+        [Serializable]
+        public sealed class ResumptionException : Exception
+        {
+            internal ResumptionException() : base() { }
+
+            internal ResumptionException(string? message) : base(message) { }
+
+            internal ResumptionException(string? message, Exception? inner) : base(message, inner) { }
+
+            private ResumptionException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+        }
     }
 }
