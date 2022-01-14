@@ -1,4 +1,3 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -9,9 +8,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleTest", "ConsoleTest\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TreeExample", "TreeExample\TreeExample.csproj", "{3FBC8CE4-DBAA-4496-AB0C-44DA711A2422}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrickyExample", "TrickyExample\TrickyExample.csproj", "{5A3C617F-0FCE-4919-BE87-570FCEB5D306}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TrickyExample", "TrickyExample\TrickyExample.csproj", "{5A3C617F-0FCE-4919-BE87-570FCEB5D306}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcoinMiner", "BitcoinMiner\BitcoinMiner.csproj", "{17ED8257-5636-4E4F-98D6-510A6663B963}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BitcoinMiner", "BitcoinMiner\BitcoinMiner.csproj", "{17ED8257-5636-4E4F-98D6-510A6663B963}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
