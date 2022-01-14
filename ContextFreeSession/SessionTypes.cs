@@ -177,11 +177,64 @@ namespace ContextFreeSession.Runtime
             }
             throw new UnexpectedLabelException();
         }
+
+        public (Eps, T) BranchFunc<from, labels1, labels2, T>(Func<S1, (Eps, T)> f1, Func<S2, (Eps, T)> f2) where from : From where labels1 : LS1 where labels2 : LS2
+        {
+            if (f1 is null) throw new ArgumentNullException(nameof(f1));
+            if (f2 is null) throw new ArgumentNullException(nameof(f2));
+            if (used) throw new LinearityViolationException();
+            used = true;
+            var fromString = typeof(from).ToString();
+            var label = Communicator.Branch(fromString);
+            if (BranchUtility.ContainsLabel<labels1>(label))
+            {
+                var session = (S1)Activator.CreateInstance(typeof(S1), true)!;
+                session.Communicator = Communicator;
+                return f1(session);
+            }
+            if (BranchUtility.ContainsLabel<labels2>(label))
+            {
+                var session = (S2)Activator.CreateInstance(typeof(S2), true)!;
+                session.Communicator = Communicator;
+                return f2(session);
+            }
+            throw new UnexpectedLabelException();
+        }
     }
 
     public class BranchSession<From, LS1, S1, LS2, S2, LS3, S3> : Session where From : IRole where S1 : Session where S2 : Session where S3 : Session
     {
         public Eps Branch<from, labels1, labels2, labels3>(Func<S1, Eps> f1, Func<S2, Eps> f2, Func<S3, Eps> f3) where from : From where labels1 : LS1 where labels2 : LS2 where labels3 : LS3
+        {
+            if (f1 is null) throw new ArgumentNullException(nameof(f1));
+            if (f2 is null) throw new ArgumentNullException(nameof(f2));
+            if (f3 is null) throw new ArgumentNullException(nameof(f3));
+            if (used) throw new LinearityViolationException();
+            used = true;
+            var fromString = typeof(from).ToString();
+            var label = Communicator.Branch(fromString);
+            if (BranchUtility.ContainsLabel<labels1>(label))
+            {
+                var session = (S1)Activator.CreateInstance(typeof(S1), true)!;
+                session.Communicator = Communicator;
+                return f1(session);
+            }
+            if (BranchUtility.ContainsLabel<labels2>(label))
+            {
+                var session = (S2)Activator.CreateInstance(typeof(S2), true)!;
+                session.Communicator = Communicator;
+                return f2(session);
+            }
+            if (BranchUtility.ContainsLabel<labels3>(label))
+            {
+                var session = (S3)Activator.CreateInstance(typeof(S3), true)!;
+                session.Communicator = Communicator;
+                return f3(session);
+            }
+            throw new UnexpectedLabelException();
+        }
+
+        public (Eps, T) BranchFunc<from, labels1, labels2, labels3, T>(Func<S1, (Eps, T)> f1, Func<S2, (Eps, T)> f2, Func<S3, (Eps, T)> f3) where from : From where labels1 : LS1 where labels2 : LS2 where labels3 : LS3
         {
             if (f1 is null) throw new ArgumentNullException(nameof(f1));
             if (f2 is null) throw new ArgumentNullException(nameof(f2));
