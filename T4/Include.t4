@@ -1,0 +1,15 @@
+<#@ import namespace="ContextFreeSession" #>
+<#@ import namespace="ContextFreeSession.Design" #>
+<#+
+Transfer Send(string from, string to, string label) => GlobalTypeCombinator.Send(from, to, label);
+
+Transfer Send<T>(string from, string to, string label) => GlobalTypeCombinator.Send<T>(from, to, label);
+
+Choice Send(string from, string to, params (string label, PayloadType payloadType, GlobalTypeElement[] conts)[] cases) => GlobalTypeCombinator.Send(from, to, cases);
+
+(string label, PayloadType payloadType, GlobalTypeElement[] conts) Case(string label, params GlobalTypeElement[] conts) => GlobalTypeCombinator.Case(label, conts);
+
+(string label, PayloadType payloadType, GlobalTypeElement[] conts) Case<T>(string label, params GlobalTypeElement[] conts) => GlobalTypeCombinator.Case<T>(label, conts);
+
+Recursion Do(string nonterminal) => GlobalTypeCombinator.Do(nonterminal);
+#>

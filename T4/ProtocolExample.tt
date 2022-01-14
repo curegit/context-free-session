@@ -1,0 +1,21 @@
+<#@ template language="C#" #>
+<#@ assembly name="/DLLPath/ContextFreeSession.dll" #>
+<#@ include file="Include.t4" #>
+<#@ import namespace="System.Numerics" #>
+<#@ output extension=".cs" #>
+<#
+var g = new GlobalType()
+{
+    { "Start", Send("Client", "Miner", Case<(byte[], BigInteger)>("mining",
+                                           Send<(byte[], BigInteger)>("Miner", "Reporter", "found"),
+                                               Send("Miner", "Client", "done"), Do("Start"),
+                                                   Send<(BigInteger, bool)>("Reporter", "Client", "result")),
+                                       Case("end", Send("Miner", "Reporter", "end")))
+    },
+};
+#>
+namespace BitcoinMiner;
+
+using ContextFreeSession.Runtime;
+
+<#= g.Generate() #>
