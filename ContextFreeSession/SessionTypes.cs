@@ -39,8 +39,8 @@ namespace ContextFreeSession.Runtime
         {
             if (used) throw new LinearityViolationException();
             used = true;
-            var toString = typeof(to).ToString();
-            var labelString = typeof(label).ToString();
+            var toString = typeof(to).Name;
+            var labelString = typeof(label).Name;
             Communicator.Send(toString, labelString, value);
             var session = (S)Activator.CreateInstance(typeof(S), true)!;
             session.Communicator = Communicator;
@@ -54,8 +54,8 @@ namespace ContextFreeSession.Runtime
         {
             if (used) throw new LinearityViolationException();
             used = true;
-            var toString = typeof(to).ToString();
-            var labelString = typeof(label).ToString();
+            var toString = typeof(to).Name;
+            var labelString = typeof(label).Name;
             Communicator.Send(toString, labelString, value);
             var session = (S1)Activator.CreateInstance(typeof(S1), true)!;
             session.Communicator = Communicator;
@@ -66,8 +66,8 @@ namespace ContextFreeSession.Runtime
         {
             if (used) throw new LinearityViolationException();
             used = true;
-            var toString = typeof(to).ToString();
-            var labelString = typeof(label).ToString();
+            var toString = typeof(to).Name;
+            var labelString = typeof(label).Name;
             Communicator.Send(toString, labelString, value);
             var session = (S2)Activator.CreateInstance(typeof(S2), true)!;
             session.Communicator = Communicator;
@@ -81,8 +81,8 @@ namespace ContextFreeSession.Runtime
         {
             if (used) throw new LinearityViolationException();
             used = true;
-            var toString = typeof(to).ToString();
-            var labelString = typeof(label).ToString();
+            var toString = typeof(to).Name;
+            var labelString = typeof(label).Name;
             Communicator.Send(toString, labelString, value);
             var session = (S1)Activator.CreateInstance(typeof(S1), true)!;
             session.Communicator = Communicator;
@@ -93,8 +93,8 @@ namespace ContextFreeSession.Runtime
         {
             if (used) throw new LinearityViolationException();
             used = true;
-            var toString = typeof(to).ToString();
-            var labelString = typeof(label).ToString();
+            var toString = typeof(to).Name;
+            var labelString = typeof(label).Name;
             Communicator.Send(toString, labelString, value);
             var session = (S2)Activator.CreateInstance(typeof(S2), true)!;
             session.Communicator = Communicator;
@@ -105,8 +105,8 @@ namespace ContextFreeSession.Runtime
         {
             if (used) throw new LinearityViolationException();
             used = true;
-            var toString = typeof(to).ToString();
-            var labelString = typeof(label).ToString();
+            var toString = typeof(to).Name;
+            var labelString = typeof(label).Name;
             Communicator.Send(toString, labelString, value);
             var session = (S3)Activator.CreateInstance(typeof(S3), true)!;
             session.Communicator = Communicator;
@@ -120,8 +120,8 @@ namespace ContextFreeSession.Runtime
         {
             if (used) throw new LinearityViolationException();
             used = true;
-            var fromString = typeof(from).ToString();
-            var labelString = typeof(label).ToString();
+            var fromString = typeof(from).Name;
+            var labelString = typeof(label).Name;
             (var l, result) = Communicator.Receive<T>(fromString, labelString);
             if (l != labelString) throw new UnexpectedLabelException();
             var session = (S)Activator.CreateInstance(typeof(S), true)!;
@@ -144,11 +144,11 @@ namespace ContextFreeSession.Runtime
                     elementTypes = elementTypes[7].GetGenericArguments();
                     tupleList.AddRange(elementTypes.Take(7));
                 }
-                return tupleList.Any(x => x.ToString() == label);
+                return tupleList.Any(x => x.Name == label);
             }
             else
             {
-                return label == typeof(LS).ToString();
+                return label == typeof(LS).Name;
             }
         }
     }
@@ -161,7 +161,7 @@ namespace ContextFreeSession.Runtime
             if (f2 is null) throw new ArgumentNullException(nameof(f2));
             if (used) throw new LinearityViolationException();
             used = true;
-            var fromString = typeof(from).ToString();
+            var fromString = typeof(from).Name;
             var label = Communicator.Branch(fromString);
             if (BranchUtility.ContainsLabel<labels1>(label))
             {
@@ -184,7 +184,7 @@ namespace ContextFreeSession.Runtime
             if (f2 is null) throw new ArgumentNullException(nameof(f2));
             if (used) throw new LinearityViolationException();
             used = true;
-            var fromString = typeof(from).ToString();
+            var fromString = typeof(from).Name;
             var label = Communicator.Branch(fromString);
             if (BranchUtility.ContainsLabel<labels1>(label))
             {
@@ -211,7 +211,7 @@ namespace ContextFreeSession.Runtime
             if (f3 is null) throw new ArgumentNullException(nameof(f3));
             if (used) throw new LinearityViolationException();
             used = true;
-            var fromString = typeof(from).ToString();
+            var fromString = typeof(from).Name;
             var label = Communicator.Branch(fromString);
             if (BranchUtility.ContainsLabel<labels1>(label))
             {
@@ -241,7 +241,7 @@ namespace ContextFreeSession.Runtime
             if (f3 is null) throw new ArgumentNullException(nameof(f3));
             if (used) throw new LinearityViolationException();
             used = true;
-            var fromString = typeof(from).ToString();
+            var fromString = typeof(from).Name;
             var label = Communicator.Branch(fromString);
             if (BranchUtility.ContainsLabel<labels1>(label))
             {
