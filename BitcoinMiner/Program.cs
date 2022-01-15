@@ -11,27 +11,20 @@ namespace BitcoinMiner
     {
         public static void Main(string[] args)
         {
-
             var client = Threading.Fork<Client_Start, Miner_Start, Reporter_Start>(miner =>
             {
+                MinerStart(miner).Close();
 
-                MinerRecursion(miner).Close();
-
-                Eps MinerRecursion(Miner_Start miner)
+                Eps MinerStart(Miner_Start ch)
                 {
-                    return miner.Branch<Client, mining, end>(mining =>
+                    return ch.Branch<Client, mining, end>(mining =>
                     {
-                        var ch1 = mining.Receive<Client, mining>(out var info);
-                        var (header, target) = info;
-
-                        var ins = new NonceTester(header, target);
-
-                        var (headerWithNonce, hash) = ins.Search();
-
+                        var ch1 = mining.Receive<Client, mining>(out var job);
+                        var (header, target) = job;
+                        var tester = new NonceTester(header, target);
+                        var (headerWithNonce, hash) = tester.Search();
                         var ch2 = ch1.Send<Reporter, found>((headerWithNonce, hash));
-
-                        return ch2.Send<Client, done>(unit).Do(MinerRecursion);
-
+                        return ch2.Send<Client, done>(unit).Do(MinerStart);
                     },
                     end =>
                     {
@@ -41,62 +34,53 @@ namespace BitcoinMiner
             },
             reporter =>
             {
-                var hashList = new List<byte[]>();
+                var minedHashList = new Queue<BigInteger>();
+                ReporterStart(reporter).Close();
 
-                reporter.Branch<Miner, found, end>(reporter =>
+                Eps ReporterStart(Reporter_Start ch)
                 {
+                    return ch.Branch<Miner, found, end>(found =>
+                    {
+                        var ch1 = found.Receive<Miner, found>(out var block);
+                        var (header, hash) = block;
+                        minedHashList.Enqueue(hash);
 
+                        // (** ここでビットコインネットワークへ反映 **)
 
-
-                },
-                ch =>
-                {
-
-                    ch.Receive<Miner, end>();
-
-
-
-
-
-
-                });
-
-                Eps f(Miner_Start ch)
-                {
-                    var ch1 = ch.Receive<Miner, found>(out var pair);
-                    var (header, hash) = pair;
-
-                    hashList.Add(hash);
-
-                    ch1.Do()
-
-                    //
-
-                hashList.First()
-
-
-
-
-                    return;
+                        var ch2 = ch1.Do(ReporterStart);
+                        var minedHash = minedHashList.Dequeue();
+                        var acceptance = CheckMiningSuccess(minedHash);
+                        return ch2.Send<Client, result>((minedHash, acceptance));
+                    },
+                    end =>
+                    {
+                        return end.Receive<Miner, end>(out var _);
+                    });
                 }
 
-
+                bool CheckMiningSuccess(BigInteger hash)
+                {
+                    // (** ビットコインネットワークを見てマイニングの成否を返す **)
+                    return true;
+                }
             });
 
-            var blocks = Block.GetSampleBlocks().ToList();
+            var blocks = new Queue<Block>(Block.GetSampleBlocks());
+            ClientStart(client).Close();
 
-            func(client).Close();
-
-            Eps func(Client_Start ch)
+            Eps ClientStart(Client_Start ch)
             {
                 if (blocks.Any())
                 {
-                    var block = blocks[0];
-                    blocks.RemoveAt(0);
-
-                    ch.Send<Miner, mining>((null, 1)).Receive();
-
-                    Console.WriteLine();
+                    var block = blocks.Dequeue();
+                    var header = block.GetHeader();
+                    var target = block.CalculateTarget();
+                    var ch1 = ch.Send<Miner, mining>((header, target));
+                    var ch2 = ch1.Receive<Miner, done>(out var _);
+                    var ch3 = ch2.Do(ClientStart).Receive<Reporter, result>(out var outcome);
+                    var (hash, acceptance) = outcome;
+                    Console.WriteLine($"0x{hash:x}: {acceptance}");
+                    return ch3;
                 }
                 else
                 {

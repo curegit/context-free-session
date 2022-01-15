@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Globalization;
@@ -37,7 +36,7 @@ namespace BitcoinMiner
             return significand * BigInteger.Pow(2, 8 * (exponent - 3));
         }
 
-        public IEnumerable<byte> GetHeader()
+        public byte[] GetHeader()
         {
             var unixTime = (uint)DateTime.ToUnixTimeSeconds();
             var versionBytes = IsLittleEndian ? GetBytes(Version) : GetBytes(Version).Reverse();
@@ -47,7 +46,7 @@ namespace BitcoinMiner
             var markleBytes = markle.Concat(new byte[32 - markle.Length]);
             var timeBytes = IsLittleEndian ? GetBytes(unixTime) : GetBytes(unixTime).Reverse();
             var bitsBytes = IsLittleEndian ? GetBytes(Bits) : GetBytes(Bits).Reverse();
-            return versionBytes.Concat(hashBytes).Concat(markleBytes).Concat(timeBytes).Concat(bitsBytes);
+            return versionBytes.Concat(hashBytes).Concat(markleBytes).Concat(timeBytes).Concat(bitsBytes).ToArray();
         }
 
         public override string ToString()
@@ -132,10 +131,15 @@ namespace BitcoinMiner
             this.header = header;
         }
 
-        public BigInteger ComputeHashWith(uint nonce)
+        private byte[] ConcatNonce(uint nonce)
         {
             var nonceBytes = IsLittleEndian ? GetBytes(nonce) : GetBytes(nonce).Reverse();
-            var doubleHash = sha256.ComputeHash(sha256.ComputeHash(header.Concat(nonceBytes).ToArray()));
+            return header.Concat(nonceBytes).ToArray();
+        }
+
+        public BigInteger ComputeHashWith(uint nonce)
+        {
+            var doubleHash = sha256.ComputeHash(sha256.ComputeHash(ConcatNonce(nonce)));
             return new BigInteger(doubleHash, isUnsigned: true, isBigEndian: false);
         }
 
@@ -146,7 +150,16 @@ namespace BitcoinMiner
 
         public bool TestNextNonce(out uint nonce)
         {
-            return TestNonce(nonce = unchecked(current += increment));
+            nonce = current;
+            current = unchecked(current += increment);
+            return TestNonce(nonce);
+        }
+
+        public (byte[] header, BigInteger hash) Search()
+        {
+            uint nonce;
+            while (!TestNextNonce(out nonce)) ;
+            return (ConcatNonce(nonce), ComputeHashWith(nonce));
         }
     }
 }
