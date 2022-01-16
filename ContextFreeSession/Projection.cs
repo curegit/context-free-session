@@ -443,7 +443,15 @@ namespace ContextFreeSession.Design
                 {
                     brs.Add((epsLabels.ToArray(), new Epsilon()));
                 }
-                return new Branch(from.First(), brs);
+                if (brs.Count > 1)
+                {
+                    return new Branch(from.First(), brs);
+                }
+                else
+                {
+                    var (ls, t) = brs.First();
+                    return t;
+                }
 
                 // MPST 由来のマージ
                 LocalTypeElement? EasyMerge(LocalTypeElement a, LocalTypeElement b)
