@@ -296,6 +296,8 @@ namespace ContextFreeSession.Design
                 if (repeat.IsEmpty) return new Epsilon();
                 // Follow に終了を含む場合
                 if (follow.Nullable) throw new ProjectionException("Can't merge with end state.", this);
+                // 送信元が違う場合
+                if (repeat.From! != follow.From!) throw new ProjectionException("Can't merge receiving states from different roles.", this);
                 // ラベルが互いに素でないなら失敗
                 if (!repeat.Disjoint(follow)) throw new ProjectionException("Labels are not disjoint.", this);
                 // マージ可能
