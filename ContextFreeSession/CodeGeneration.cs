@@ -46,8 +46,16 @@ namespace ContextFreeSession.Design
             var result = "";
             foreach (var (nonterminal, body) in Rules)
             {
-                var str = $"public class {nonterminal} : {((LocalTypeElement)body).ToTypeString()}, IStart {{ public string Role => \"{Role}\"; }}";
-                result += str.WithNewLine().WithNewLine();
+                if (nonterminal == StartSymbol)
+                {
+                    var str = $"public class {nonterminal} : {((LocalTypeElement)body).ToTypeString()}, IStart {{ public string Role => \"{Role}\"; }}";
+                    result += str.WithNewLine().WithNewLine();
+                }
+                else
+                {
+                    var str = $"public class {nonterminal} : {((LocalTypeElement)body).ToTypeString()} {{ }}";
+                    result += str.WithNewLine().WithNewLine();
+                }
             }
             return result.TrimNewLines().WithNewLine();
         }
