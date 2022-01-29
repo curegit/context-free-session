@@ -6,7 +6,7 @@ namespace ContextFreeSession.Runtime
 
         public (string label, T value) Receive<T>(string from, string label);
 
-        public string Branch(string from);
+        public string Peek(string from);
 
         public void Close();
     }

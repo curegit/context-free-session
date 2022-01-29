@@ -162,7 +162,7 @@ namespace ContextFreeSession.Runtime
             if (used) throw new LinearityViolationException();
             used = true;
             var fromString = typeof(from).Name;
-            var label = Communicator.Branch(fromString);
+            var label = Communicator.Peek(fromString);
             if (BranchUtility.ContainsLabel<labels1>(label))
             {
                 var session = (S1)Activator.CreateInstance(typeof(S1), true)!;
@@ -185,7 +185,7 @@ namespace ContextFreeSession.Runtime
             if (used) throw new LinearityViolationException();
             used = true;
             var fromString = typeof(from).Name;
-            var label = Communicator.Branch(fromString);
+            var label = Communicator.Peek(fromString);
             if (BranchUtility.ContainsLabel<labels1>(label))
             {
                 var session = (S1)Activator.CreateInstance(typeof(S1), true)!;
@@ -212,7 +212,7 @@ namespace ContextFreeSession.Runtime
             if (used) throw new LinearityViolationException();
             used = true;
             var fromString = typeof(from).Name;
-            var label = Communicator.Branch(fromString);
+            var label = Communicator.Peek(fromString);
             if (BranchUtility.ContainsLabel<labels1>(label))
             {
                 var session = (S1)Activator.CreateInstance(typeof(S1), true)!;
@@ -242,7 +242,7 @@ namespace ContextFreeSession.Runtime
             if (used) throw new LinearityViolationException();
             used = true;
             var fromString = typeof(from).Name;
-            var label = Communicator.Branch(fromString);
+            var label = Communicator.Peek(fromString);
             if (BranchUtility.ContainsLabel<labels1>(label))
             {
                 var session = (S1)Activator.CreateInstance(typeof(S1), true)!;

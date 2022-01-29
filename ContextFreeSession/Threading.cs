@@ -138,7 +138,7 @@ namespace ContextFreeSession.Runtime
             }
         }
 
-        public string Branch(string from)
+        public string Peek(string from)
         {
             if (lookaheadLabel is null)
             {
