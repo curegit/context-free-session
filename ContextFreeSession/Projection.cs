@@ -650,6 +650,7 @@ namespace ContextFreeSession.Design
     {
         public string? From { get; init; }
 
+        // ε または $ が含まれるかどうか
         public bool Nullable { get; init; }
 
         public OrderedSet<string> Labels { get; init; }
