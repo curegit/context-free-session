@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using ContextFreeSession.Design;
 
 namespace ConsoleTest
@@ -112,6 +113,30 @@ namespace ConsoleTest
 
             Console.WriteLine("## Code");
             Console.WriteLine(multiple.Generate());
+
+            Console.WriteLine("# Bitcoin Miner");
+
+            var btc = new GlobalType()
+            {
+                { "Start", Send("Client", "Miner", Case<(byte[] header, BigInteger target)>("mining", Send<(byte[] header, BigInteger hash)>("Miner", "Reporter", "found"), Send("Miner", "Client", "done"), Do("Start"), Send<(BigInteger hash, bool acceptance)>("Reporter", "Client", "result")),
+                                                   Case("end", Send("Miner", "Reporter", "end"))) },
+            };
+
+            Console.WriteLine("## Global type");
+            Console.WriteLine(btc);
+
+            Console.WriteLine("## Local type");
+            Console.WriteLine(btc.ToLocal("Client"));
+            Console.WriteLine(btc.ToLocal("Miner"));
+            Console.WriteLine(btc.ToLocal("Reporter"));
+
+            Console.WriteLine("## Local type (determinized)");
+            Console.WriteLine(btc.Project("Client"));
+            Console.WriteLine(btc.Project("Miner"));
+            Console.WriteLine(btc.Project("Reporter"));
+
+            Console.WriteLine("## Code");
+            Console.WriteLine(btc.Generate());
         }
     }
 }
