@@ -119,22 +119,22 @@ namespace ContextFreeSession.Runtime
 
         public void Send<T>(string to, string label, T value)
         {
-            Task.Run(async () => await writers[to].WriteAsync(label)).Wait();
-            Task.Run(async () => await writers[to].WriteAsync(value!)).Wait();
+            writers[to].WriteAsync(label).AsTask().Wait();
+            writers[to].WriteAsync(value!).AsTask().Wait();
         }
 
         public (string label, T value) Receive<T>(string from, string label)
         {
             if (lookaheadLabel is null)
             {
-                var l = (string)Task.Run(async () => await readers[from].ReadAsync()).Result;
-                return (l, (T)Task.Run(async () => await readers[from].ReadAsync()).Result);
+                var l = (string)readers[from].ReadAsync().AsTask().Result;
+                return (l, (T)readers[from].ReadAsync().AsTask().Result);
             }
             else
             {
                 var l = lookaheadLabel;
                 lookaheadLabel = null;
-                return (l, (T)Task.Run(async () => await readers[from].ReadAsync()).Result);
+                return (l, (T)readers[from].ReadAsync().AsTask().Result);
             }
         }
 
@@ -142,7 +142,7 @@ namespace ContextFreeSession.Runtime
         {
             if (lookaheadLabel is null)
             {
-                lookaheadLabel = (string)Task.Run(async () => await readers[from].ReadAsync()).Result;
+                lookaheadLabel = (string)readers[from].ReadAsync().AsTask().Result;
                 return lookaheadLabel;
             }
             else
