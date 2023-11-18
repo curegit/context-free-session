@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.Serialization;
 
 namespace ContextFreeSession
 {
@@ -13,8 +12,6 @@ namespace ContextFreeSession
             internal IdentifierConflictException(string? message) : base(message) { }
 
             internal IdentifierConflictException(string? message, Exception? inner) : base(message, inner) { }
-
-            private IdentifierConflictException(SerializationInfo info, StreamingContext context) : base(info, context) { }
         }
 
         [Serializable]
@@ -25,8 +22,6 @@ namespace ContextFreeSession
             internal InvalidIdentifierException(string? message) : base(message) { }
 
             internal InvalidIdentifierException(string? message, Exception? inner) : base(message, inner) { }
-
-            protected InvalidIdentifierException(SerializationInfo info, StreamingContext context) : base(info, context) { }
         }
 
         [Serializable]
@@ -37,8 +32,6 @@ namespace ContextFreeSession
             internal InvalidNonterminalSymbolException(string nonterminal) : base($"'{nonterminal}' is not a valid nonterminal symbol.") { }
 
             internal InvalidNonterminalSymbolException(string? message, Exception? inner) : base(message, inner) { }
-
-            private InvalidNonterminalSymbolException(SerializationInfo info, StreamingContext context) : base(info, context) { }
 
             public static bool IsValidNonterminalSymbol(string symbol)
             {
@@ -55,8 +48,6 @@ namespace ContextFreeSession
 
             internal InvalidRoleNameException(string? message, Exception? inner) : base(message, inner) { }
 
-            private InvalidRoleNameException(SerializationInfo info, StreamingContext context) : base(info, context) { }
-
             public static bool IsValidRoleName(string roleName)
             {
                 return roleName.Length > 0 && roleName[0].IsLatin() && roleName.IsAlphanumeric();
@@ -72,8 +63,6 @@ namespace ContextFreeSession
 
             internal InvalidLabelException(string? message, Exception? inner) : base(message, inner) { }
 
-            private InvalidLabelException(SerializationInfo info, StreamingContext context) : base(info, context) { }
-
             public static bool IsValidLabel(string label)
             {
                 return label.Length > 0 && label[0].IsLatin() && label.IsAlphanumeric();
@@ -88,8 +77,6 @@ namespace ContextFreeSession
             internal InvalidGlobalTypeException(string? message) : base(message) { }
 
             internal InvalidGlobalTypeException(string? message, Exception? inner) : base(message, inner) { }
-
-            protected InvalidGlobalTypeException(SerializationInfo info, StreamingContext context) : base(info, context) { }
         }
 
         [Serializable]
@@ -100,8 +87,6 @@ namespace ContextFreeSession
             internal ReflexiveMessageException(string roleName) : base($"Reflexive message from {roleName} to {roleName}.") { }
 
             internal ReflexiveMessageException(string? message, Exception? inner) : base(message, inner) { }
-
-            private ReflexiveMessageException(SerializationInfo info, StreamingContext context) : base(info, context) { }
         }
 
         [Serializable]
@@ -114,8 +99,6 @@ namespace ContextFreeSession
             internal ProjectionException(string message, LocalType lastState) : base(message.WithNewLine() + "Last state:".WithNewLine() + lastState.ToString().Indented(2)) { }
 
             internal ProjectionException(string? message, Exception? inner) : base(message, inner) { }
-
-            protected ProjectionException(SerializationInfo info, StreamingContext context) : base(info, context) { }
         }
 
         [Serializable]
@@ -128,8 +111,6 @@ namespace ContextFreeSession
             internal LeftRecursionException(string message, LocalType lastState) : base(message.WithNewLine() + "Last state:".WithNewLine() + lastState.ToString().Indented(2)) { }
 
             internal LeftRecursionException(string? message, Exception? inner) : base(message, inner) { }
-
-            private LeftRecursionException(SerializationInfo info, StreamingContext context) : base(info, context) { }
         }
     }
 
@@ -143,8 +124,6 @@ namespace ContextFreeSession
             internal LinearityViolationException(string? message) : base(message) { }
 
             internal LinearityViolationException(string? message, Exception? inner) : base(message, inner) { }
-
-            private LinearityViolationException(SerializationInfo info, StreamingContext context) : base(info, context) { }
         }
 
         [Serializable]
@@ -155,8 +134,6 @@ namespace ContextFreeSession
             internal UnexpectedLabelException(string? message) : base(message) { }
 
             internal UnexpectedLabelException(string? message, Exception? inner) : base(message, inner) { }
-
-            private UnexpectedLabelException(SerializationInfo info, StreamingContext context) : base(info, context) { }
         }
 
         [Serializable]
@@ -167,8 +144,6 @@ namespace ContextFreeSession
             internal ResumptionException(string? message) : base(message) { }
 
             internal ResumptionException(string? message, Exception? inner) : base(message, inner) { }
-
-            private ResumptionException(SerializationInfo info, StreamingContext context) : base(info, context) { }
         }
     }
 }

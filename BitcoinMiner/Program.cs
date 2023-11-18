@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using ContextFreeSession.Runtime;
 using static ContextFreeSession.Unit;
@@ -70,7 +69,7 @@ namespace BitcoinMiner
 
             Eps ClientStart(Client_Start ch)
             {
-                if (blocks.Any())
+                if (blocks.Count != 0)
                 {
                     var block = blocks.Dequeue();
                     var header = block.GetHeader();
