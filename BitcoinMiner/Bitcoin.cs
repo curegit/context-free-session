@@ -8,7 +8,7 @@ namespace BitcoinMiner
 {
     using static BitConverter;
 
-    public struct Block
+    public readonly struct Block
     {
         public readonly int Version;
 
