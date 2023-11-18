@@ -24,14 +24,8 @@ namespace ContextFreeSession.Design
 
         public void Add(string nonterminal, params GlobalTypeElement[] body)
         {
-            if (nonterminal is null)
-            {
-                throw new ArgumentNullException(nameof(nonterminal));
-            }
-            if (body is null)
-            {
-                throw new ArgumentNullException(nameof(body));
-            }
+            ArgumentNullException.ThrowIfNull(nonterminal);
+            ArgumentNullException.ThrowIfNull(body);
             if (body.Length < 1)
             {
                 throw new ArgumentException("Attempted to add an empty rule.", nameof(body));
@@ -171,10 +165,7 @@ namespace ContextFreeSession.Design
         {
             From = from ?? throw new ArgumentNullException(nameof(from));
             To = to ?? throw new ArgumentNullException(nameof(to));
-            if (cases is null)
-            {
-                throw new ArgumentNullException(nameof(cases));
-            }
+            ArgumentNullException.ThrowIfNull(cases);
             if (!InvalidRoleNameException.IsValidRoleName(from))
             {
                 throw new InvalidRoleNameException(from);

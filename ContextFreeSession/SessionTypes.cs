@@ -182,8 +182,8 @@ namespace ContextFreeSession.Runtime
     {
         public Eps Branch<from, labels1, labels2>(Func<S1, Eps> f1, Func<S2, Eps> f2) where from : From where labels1 : LS1 where labels2 : LS2
         {
-            if (f1 is null) throw new ArgumentNullException(nameof(f1));
-            if (f2 is null) throw new ArgumentNullException(nameof(f2));
+            ArgumentNullException.ThrowIfNull(f1);
+            ArgumentNullException.ThrowIfNull(f2);
             if (used) throw new LinearityViolationException();
             used = true;
             var fromString = typeof(from).Name;
@@ -205,8 +205,8 @@ namespace ContextFreeSession.Runtime
 
         public (Eps, T) BranchFunc<from, labels1, labels2, T>(Func<S1, (Eps, T)> f1, Func<S2, (Eps, T)> f2) where from : From where labels1 : LS1 where labels2 : LS2
         {
-            if (f1 is null) throw new ArgumentNullException(nameof(f1));
-            if (f2 is null) throw new ArgumentNullException(nameof(f2));
+            ArgumentNullException.ThrowIfNull(f1);
+            ArgumentNullException.ThrowIfNull(f2);
             if (used) throw new LinearityViolationException();
             used = true;
             var fromString = typeof(from).Name;
@@ -231,9 +231,9 @@ namespace ContextFreeSession.Runtime
     {
         public Eps Branch<from, labels1, labels2, labels3>(Func<S1, Eps> f1, Func<S2, Eps> f2, Func<S3, Eps> f3) where from : From where labels1 : LS1 where labels2 : LS2 where labels3 : LS3
         {
-            if (f1 is null) throw new ArgumentNullException(nameof(f1));
-            if (f2 is null) throw new ArgumentNullException(nameof(f2));
-            if (f3 is null) throw new ArgumentNullException(nameof(f3));
+            ArgumentNullException.ThrowIfNull(f1);
+            ArgumentNullException.ThrowIfNull(f2);
+            ArgumentNullException.ThrowIfNull(f3);
             if (used) throw new LinearityViolationException();
             used = true;
             var fromString = typeof(from).Name;
@@ -261,9 +261,9 @@ namespace ContextFreeSession.Runtime
 
         public (Eps, T) BranchFunc<from, labels1, labels2, labels3, T>(Func<S1, (Eps, T)> f1, Func<S2, (Eps, T)> f2, Func<S3, (Eps, T)> f3) where from : From where labels1 : LS1 where labels2 : LS2 where labels3 : LS3
         {
-            if (f1 is null) throw new ArgumentNullException(nameof(f1));
-            if (f2 is null) throw new ArgumentNullException(nameof(f2));
-            if (f3 is null) throw new ArgumentNullException(nameof(f3));
+            ArgumentNullException.ThrowIfNull(f1);
+            ArgumentNullException.ThrowIfNull(f2);
+            ArgumentNullException.ThrowIfNull(f3);
             if (used) throw new LinearityViolationException();
             used = true;
             var fromString = typeof(from).Name;
@@ -294,7 +294,7 @@ namespace ContextFreeSession.Runtime
     {
         public C Do(Func<S, Eps> deleg)
         {
-            if (deleg is null) throw new ArgumentNullException(nameof(deleg));
+            ArgumentNullException.ThrowIfNull(deleg);
             if (used) throw new LinearityViolationException();
             used = true;
             var inner = (S)Activator.CreateInstance(typeof(S), true)!;
@@ -310,7 +310,7 @@ namespace ContextFreeSession.Runtime
 
         public C Do<T>(Func<S, T, Eps> deleg, T args)
         {
-            if (deleg is null) throw new ArgumentNullException(nameof(deleg));
+            ArgumentNullException.ThrowIfNull(deleg);
             if (used) throw new LinearityViolationException();
             used = true;
             var inner = (S)Activator.CreateInstance(typeof(S), true)!;
@@ -326,7 +326,7 @@ namespace ContextFreeSession.Runtime
 
         public (C, TResult) DoFunc<TResult>(Func<S, (Eps, TResult)> deleg)
         {
-            if (deleg is null) throw new ArgumentNullException(nameof(deleg));
+            ArgumentNullException.ThrowIfNull(deleg);
             if (used) throw new LinearityViolationException();
             used = true;
             var inner = (S)Activator.CreateInstance(typeof(S), true)!;
@@ -342,7 +342,7 @@ namespace ContextFreeSession.Runtime
 
         public (C, TResult) DoFunc<T, TResult>(Func<S, T, (Eps, TResult)> deleg, T args)
         {
-            if (deleg is null) throw new ArgumentNullException(nameof(deleg));
+            ArgumentNullException.ThrowIfNull(deleg);
             if (used) throw new LinearityViolationException();
             used = true;
             var inner = (S)Activator.CreateInstance(typeof(S), true)!;

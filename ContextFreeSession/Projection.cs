@@ -8,14 +8,14 @@ namespace ContextFreeSession.Design
     {
         public LocalType ToLocal(string role)
         {
-            if (role is null) throw new ArgumentNullException(nameof(role));
+            ArgumentNullException.ThrowIfNull(role);
             Validate(role);
             return new LocalType(role, MapToLocal(role, this));
         }
 
         public LocalType Project(string role)
         {
-            if (role is null) throw new ArgumentNullException(nameof(role));
+            ArgumentNullException.ThrowIfNull(role);
             var local = ToLocal(role);
             local.EliminateLeftRecursion();
             local.Determinize();
@@ -432,7 +432,7 @@ namespace ContextFreeSession.Design
                 }
                 // マージ可能
                 var brs = recvs.GroupBy(x => x.Label).Select(x => (new string[] { x.Key }, new Receive(x.First().From, x.Key, x.First().PayloadType, new Merge(x.Select(z => z.Cont)).Simplify()) as LocalTypeTerm)).ToList();
-                if (calls.Any())
+                if (calls.Count != 0)
                 {
                     var alist = new AssociationList<string, string[]>();
                     foreach (var (n, ls) in callLabels.GroupBy(x => x.nonterminal).Select(x => (x.Key, x.Select(y => y.label))))
@@ -441,7 +441,7 @@ namespace ContextFreeSession.Design
                     }
                     brs.AddRange(calls.GroupBy(x => x.nonterminal).Select(x => (alist[x.Key], new Call(x.Key, new Merge(x.Select(y => y.call.Cont)).Simplify()) as LocalTypeTerm)));
                 }
-                if (epsLabels.Any())
+                if (epsLabels.Count != 0)
                 {
                     brs.Add((epsLabels.ToArray(), new Epsilon()));
                 }

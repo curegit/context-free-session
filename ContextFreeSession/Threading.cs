@@ -10,7 +10,7 @@ namespace ContextFreeSession.Runtime
     {
         public static S1 Fork<S1, S2>(Action<S2> f) where S1 : Session, IStart where S2 : Session, IStart
         {
-            if (f is null) throw new ArgumentNullException(nameof(f));
+            ArgumentNullException.ThrowIfNull(f);
             var client = (S1)Activator.CreateInstance(typeof(S1), true)!;
             var server = (S2)Activator.CreateInstance(typeof(S2), true)!;
             var channels = CreateChannels(client.Role, server.Role);
@@ -24,8 +24,8 @@ namespace ContextFreeSession.Runtime
 
         public static S1 Fork<S1, S2, S3>(Action<S2> f1, Action<S3> f2) where S1 : Session, IStart where S2 : Session, IStart where S3 : Session, IStart
         {
-            if (f1 is null) throw new ArgumentNullException(nameof(f1));
-            if (f2 is null) throw new ArgumentNullException(nameof(f2));
+            ArgumentNullException.ThrowIfNull(f1);
+            ArgumentNullException.ThrowIfNull(f2);
             var client = (S1)Activator.CreateInstance(typeof(S1), true)!;
             var server1 = (S2)Activator.CreateInstance(typeof(S2), true)!;
             var server2 = (S3)Activator.CreateInstance(typeof(S3), true)!;
@@ -44,9 +44,9 @@ namespace ContextFreeSession.Runtime
 
         public static S1 Fork<S1, S2, S3, S4>(Action<S2> f1, Action<S3> f2, Action<S4> f3) where S1 : Session, IStart where S2 : Session, IStart where S3 : Session, IStart where S4 : Session, IStart
         {
-            if (f1 is null) throw new ArgumentNullException(nameof(f1));
-            if (f2 is null) throw new ArgumentNullException(nameof(f2));
-            if (f3 is null) throw new ArgumentNullException(nameof(f3));
+            ArgumentNullException.ThrowIfNull(f1);
+            ArgumentNullException.ThrowIfNull(f2);
+            ArgumentNullException.ThrowIfNull(f3);
             var client = (S1)Activator.CreateInstance(typeof(S1), true)!;
             var server1 = (S2)Activator.CreateInstance(typeof(S2), true)!;
             var server2 = (S3)Activator.CreateInstance(typeof(S3), true)!;
