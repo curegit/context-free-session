@@ -43,17 +43,17 @@ namespace ContextFreeSession.Design
 
         public override string ToString()
         {
-            var accumlator = "";
+            var accumulator = "";
             foreach (var (nonterminal, body) in rules)
             {
-                accumlator += (nonterminal + " {").WithNewLine();
+                accumulator += (nonterminal + " {").WithNewLine();
                 foreach (var element in body)
                 {
-                    accumlator += element.ToString().Indented(4).WithNewLine();
+                    accumulator += element.ToString().Indented(4).WithNewLine();
                 }
-                accumlator += "}".WithNewLine();
+                accumulator += "}".WithNewLine();
             }
-            return accumlator.TrimNewLines();
+            return accumulator.TrimNewLines();
         }
 
         public IEnumerable<string> Roles
@@ -208,24 +208,24 @@ namespace ContextFreeSession.Design
 
         public override string ToString()
         {
-            var accumlator = $"{From} → {To}:";
+            var accumulator = $"{From} → {To}:";
             foreach (var (label, payloadType, conts) in Cases)
             {
                 if (payloadType.IsUnitType)
                 {
-                    accumlator += $" {label} {{".WithNewLine();
+                    accumulator += $" {label} {{".WithNewLine();
                 }
                 else
                 {
-                    accumlator += $" {label}<{payloadType}> {{".WithNewLine();
+                    accumulator += $" {label}<{payloadType}> {{".WithNewLine();
                 }
                 foreach (var element in conts)
                 {
-                    accumlator += element.ToString().Indented(4).WithNewLine();
+                    accumulator += element.ToString().Indented(4).WithNewLine();
                 }
-                accumlator += "}";
+                accumulator += "}";
             }
-            return accumlator;
+            return accumulator;
         }
     }
 

@@ -43,12 +43,12 @@ namespace ContextFreeSession
 
         public static string Indented(this string str, int spaces)
         {
-            var accumlator = "";
+            var accumulator = "";
             foreach (var line in str.Lines())
             {
-                accumlator += (new string(Enumerable.Repeat(' ', spaces).ToArray()) + line).WithNewLine();
+                accumulator += (new string(Enumerable.Repeat(' ', spaces).ToArray()) + line).WithNewLine();
             }
-            return accumlator.Substring(0, accumlator.Length - NewLine.Length);
+            return accumulator.Substring(0, accumulator.Length - NewLine.Length);
         }
     }
 }

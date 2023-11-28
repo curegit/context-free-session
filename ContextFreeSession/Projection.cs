@@ -528,47 +528,47 @@ namespace ContextFreeSession.Design
             }
         }
 
-        private ReceiveCanditate? FirstSet(LocalTypeTerm t)
+        private ReceiveCandidate? FirstSet(LocalTypeTerm t)
         {
             switch (t)
             {
                 case Receive receive:
-                    return new ReceiveCanditate(receive.From, false, receive.Label);
+                    return new ReceiveCandidate(receive.From, false, receive.Label);
                 case Branch branch:
-                    return new ReceiveCanditate(branch.From, false, branch.Branches.SelectMany(x => x.labels));
+                    return new ReceiveCandidate(branch.From, false, branch.Branches.SelectMany(x => x.labels));
                 case Star:
                     throw new NotImplementedException();
                 case Merge merge:
                     var bs = merge.Branches.Select(FirstSet);
-                    return bs.Any(x => x is null) ? null : ReceiveCanditate.Union(bs.Cast<ReceiveCanditate>());
+                    return bs.Any(x => x is null) ? null : ReceiveCandidate.Union(bs.Cast<ReceiveCandidate>());
                 case Call call:
                     var cf = FirstSet(Rules[call.Nonterminal]);
                     if (cf is null) return null;
                     if (!cf.Nullable) return cf;
-                    if (FirstSet(call.Cont) is ReceiveCanditate canditate) return cf.Union(canditate);
+                    if (FirstSet(call.Cont) is ReceiveCandidate candidate) return cf.Union(candidate);
                     return null;
                 case Epsilon:
-                    return ReceiveCanditate.Empty();
+                    return ReceiveCandidate.Empty();
                 default:
                     return null;
             }
         }
 
-        private ReceiveCanditate? FollowSet(string context)
+        private ReceiveCandidate? FollowSet(string context)
         {
-            var clist = new List<ReceiveCanditate>();
+            var clist = new List<ReceiveCandidate>();
             foreach (var (nonterminal, body) in Rules.ToArray())
             {
                 var follow = FollowSetRule(context, body, nonterminal);
                 if (follow is null) return null;
                 clist.Add(follow);
             }
-            var union = ReceiveCanditate.Union(clist);
+            var union = ReceiveCandidate.Union(clist);
             if (union is null) return null;
-            return context == StartSymbol ? new ReceiveCanditate(union.From, true, union.Labels) : union;
+            return context == StartSymbol ? new ReceiveCandidate(union.From, true, union.Labels) : union;
         }
 
-        private ReceiveCanditate? FollowSetRule(string nonterminal, LocalTypeTerm t, string context)
+        private ReceiveCandidate? FollowSetRule(string nonterminal, LocalTypeTerm t, string context)
         {
             switch (t)
             {
@@ -576,37 +576,37 @@ namespace ContextFreeSession.Design
                     return FollowSetRule(nonterminal, send.Cont, context);
                 case Select select:
                     var brs = select.Branches.Select(x => FollowSetRule(nonterminal, x.cont, context));
-                    return brs.Any(x => x is null) ? null : ReceiveCanditate.Union(brs.Cast<ReceiveCanditate>());
+                    return brs.Any(x => x is null) ? null : ReceiveCandidate.Union(brs.Cast<ReceiveCandidate>());
                 case Receive receive:
                     return FollowSetRule(nonterminal, receive.Cont, context);
                 case Branch branch:
                     var fs = branch.Branches.Select(x => FollowSetRule(nonterminal, x.cont, context));
                     if (fs.Any(x => x is null)) return null;
-                    return ReceiveCanditate.Union(fs.Cast<ReceiveCanditate>());
+                    return ReceiveCandidate.Union(fs.Cast<ReceiveCandidate>());
                 case Star star:
                     return FollowSetRule(nonterminal, star.Term, context);
                 case Merge merge:
                     var bs = merge.Branches.Select(x => FollowSetRule(nonterminal, x, context));
-                    return bs.Any(x => x is null) ? null : ReceiveCanditate.Union(bs.Cast<ReceiveCanditate>());
+                    return bs.Any(x => x is null) ? null : ReceiveCandidate.Union(bs.Cast<ReceiveCandidate>());
                 case Call call:
                     if (call.Nonterminal == nonterminal)
                     {
                         // 右再帰を賢く無視
                         if (nonterminal == context && call.Cont is Epsilon)
                         {
-                            return new ReceiveCanditate(null, false);
+                            return new ReceiveCandidate(null, false);
                         }
                         return FollowSetRuleSub(call.Cont, context);
                     }
                     return FollowSetRule(nonterminal, call.Cont, context);
                 case Epsilon:
-                    return new ReceiveCanditate(null, false);
+                    return new ReceiveCandidate(null, false);
                 default:
                     return null;
             }
         }
 
-        private ReceiveCanditate? FollowSetRuleSub(LocalTypeTerm t, string context)
+        private ReceiveCandidate? FollowSetRuleSub(LocalTypeTerm t, string context)
         {
             var first = FirstSet(t);
             if (first is null) return null;
@@ -615,10 +615,10 @@ namespace ContextFreeSession.Design
             if (follow is null) return null;
             var union = first.Union(follow);
             if (union is null) return null;
-            return new ReceiveCanditate(union.From, follow.Nullable, union.Labels);
+            return new ReceiveCandidate(union.From, follow.Nullable, union.Labels);
         }
 
-        private ReceiveCanditate? DirectorSet(LocalTypeTerm t, string context)
+        private ReceiveCandidate? DirectorSet(LocalTypeTerm t, string context)
         {
             var first = FirstSet(t);
             if (first is null)
@@ -639,14 +639,14 @@ namespace ContextFreeSession.Design
                     {
                         return union;
                     }
-                    return union is null ? null : new ReceiveCanditate(union.From, follow.Nullable, union.Labels);
+                    return union is null ? null : new ReceiveCandidate(union.From, follow.Nullable, union.Labels);
                 }
                 return first;
             }
         }
     }
 
-    internal class ReceiveCanditate
+    internal class ReceiveCandidate
     {
         public string? From { get; init; }
 
@@ -655,14 +655,14 @@ namespace ContextFreeSession.Design
 
         public OrderedSet<string> Labels { get; init; }
 
-        public ReceiveCanditate(string? from, bool nullable, IEnumerable<string> labels)
+        public ReceiveCandidate(string? from, bool nullable, IEnumerable<string> labels)
         {
             From = from;
             Nullable = nullable;
             Labels = new OrderedSet<string>(labels);
         }
 
-        public ReceiveCanditate(string? from, bool nullable, params string[] labels)
+        public ReceiveCandidate(string? from, bool nullable, params string[] labels)
         {
             From = from;
             Nullable = nullable;
@@ -677,20 +677,20 @@ namespace ContextFreeSession.Design
             }
         }
 
-        public bool Disjoint(ReceiveCanditate c)
+        public bool Disjoint(ReceiveCandidate c)
         {
             return c.Labels.Except(Labels).Count() == c.Labels.Count();
         }
 
-        public ReceiveCanditate? Union(ReceiveCanditate canditate)
+        public ReceiveCandidate? Union(ReceiveCandidate candidate)
         {
-            if (canditate.From == null)
+            if (candidate.From == null)
             {
-                return new ReceiveCanditate(From, Nullable || canditate.Nullable, Labels.Union(canditate.Labels));
+                return new ReceiveCandidate(From, Nullable || candidate.Nullable, Labels.Union(candidate.Labels));
             }
-            else if (From == null || From == canditate.From)
+            else if (From == null || From == candidate.From)
             {
-                return new ReceiveCanditate(canditate.From, Nullable || canditate.Nullable, Labels.Union(canditate.Labels));
+                return new ReceiveCandidate(candidate.From, Nullable || candidate.Nullable, Labels.Union(candidate.Labels));
             }
             else
             {
@@ -698,15 +698,15 @@ namespace ContextFreeSession.Design
             }
         }
 
-        public static ReceiveCanditate Empty()
+        public static ReceiveCandidate Empty()
         {
-            return new ReceiveCanditate(null, true, Enumerable.Empty<string>());
+            return new ReceiveCandidate(null, true, Enumerable.Empty<string>());
         }
 
-        public static ReceiveCanditate? Union(IEnumerable<ReceiveCanditate> canditates)
+        public static ReceiveCandidate? Union(IEnumerable<ReceiveCandidate> candidates)
         {
-            ReceiveCanditate? accum = new(null, false);
-            foreach (var c in canditates)
+            ReceiveCandidate? accum = new(null, false);
+            foreach (var c in candidates)
             {
                 if (accum is null) return null;
                 accum = accum.Union(c);

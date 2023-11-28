@@ -31,15 +31,15 @@ namespace ContextFreeSession.Design
 
         public override string ToString()
         {
-            var accumlator = "";
+            var accumulator = "";
             foreach (var (nonterminal, body) in Rules)
             {
                 var str = body.ToString();
-                accumlator += (nonterminal + " {").WithNewLine();
-                accumlator += str == "" ? "" : str.Indented(4).WithNewLine();
-                accumlator += "}".WithNewLine();
+                accumulator += (nonterminal + " {").WithNewLine();
+                accumulator += str == "" ? "" : str.Indented(4).WithNewLine();
+                accumulator += "}".WithNewLine();
             }
-            return accumlator.TrimNewLines();
+            return accumulator.TrimNewLines();
         }
     }
 
